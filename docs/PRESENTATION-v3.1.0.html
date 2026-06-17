@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cap · DevRoom v3.1.0 — Verification & Release</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0c; --bg2: #12121a; --bg3: #1a1a24;
+  --accent: #c9a227; --accent2: #8b6914;
+  --text: #f5f5f7; --text2: #a1a1aa; --text3: #52525b;
+  --ok: #30d158; --warn: #ffd60a; --err: #ff453a;
+  --border: rgba(255,255,255,0.08);
+  --mono: 'SF Mono','Fira Code',Consolas,monospace;
+  --sans: -apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden; }
+#progress { position:fixed; top:0; left:0; height:3px; background:var(--accent); z-index:200; transition:width .4s ease; }
+#counter { position:fixed; bottom:28px; right:32px; font-family:var(--mono); font-size:12px; color:var(--text3); z-index:200; }
+#dots { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:200; flex-wrap:wrap; max-width:80vw; justify-content:center; }
+.dot { width:6px; height:6px; border-radius:50%; background:var(--text3); transition:all .3s ease; cursor:pointer; }
+.dot.on { width:16px; border-radius:3px; background:var(--accent); }
+#deck { position:relative; width:100vw; height:100vh; }
+.slide {
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  justify-content:center; align-items:center; padding:48px 64px;
+  opacity:0; pointer-events:none; transform:translateY(12px);
+  transition:opacity .45s ease, transform .45s ease;
+}
+.slide.active { opacity:1; pointer-events:auto; transform:translateY(0); }
+.label { font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+h1 { font-size:clamp(40px,6vw,72px); font-weight:800; letter-spacing:-.03em; line-height:1.05; margin-bottom:16px; text-align:center; }
+h2 { font-size:clamp(24px,3.5vw,42px); font-weight:700; letter-spacing:-.02em; line-height:1.15; margin-bottom:16px; text-align:center; }
+.sub { font-size:clamp(14px,1.8vw,18px); color:var(--text2); line-height:1.55; max-width:720px; text-align:center; }
+.accent { color:var(--accent); }
+.ok { color:var(--ok); }
+.err { color:var(--err); }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; max-width:960px; margin-top:24px; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; width:100%; max-width:960px; margin-top:24px; }
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:left; }
+.card h3 { font-size:15px; margin-bottom:8px; color:var(--accent); }
+.card p, .card li { font-size:13px; color:var(--text2); line-height:1.5; }
+.card ul { padding-left:18px; }
+.card li { margin-bottom:6px; }
+.shot { max-width:min(920px,90vw); max-height:min(520px,58vh); border-radius:10px; border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,.5); margin-top:20px; object-fit:contain; background:var(--bg3); }
+.flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:24px; font-size:13px; }
+.flow span { background:var(--bg2); border:1px solid var(--border); padding:10px 14px; border-radius:8px; }
+.flow .arrow { background:none; border:none; color:var(--accent); font-size:18px; padding:0; }
+.checklist { text-align:left; max-width:640px; width:100%; margin-top:20px; }
+.checklist li { list-style:none; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; color:var(--text2); display:flex; gap:10px; align-items:flex-start; }
+.checklist li::before { content:'✓'; color:var(--ok); font-weight:700; flex-shrink:0; }
+.checklist li.warn::before { content:'!'; color:var(--warn); }
+.meta { font-family:var(--mono); font-size:11px; color:var(--text3); margin-top:24px; }
+kbd { background:var(--bg3); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:11px; }
+@media (max-width:768px) {
+  .slide { padding:32px 20px; }
+  .grid2, .grid3 { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="counter"></div>
+<div id="dots"></div>
+<div id="deck"></div>
+
+<script>
+const slides = [
+  {
+    label: 'Capricorn Systems',
+    html: `<h1>Cap · DevRoom <span class="accent">v3.1.0</span></h1>
+      <p class="sub">Personal AI development office for the Cap portfolio — verified 17 June 2026.<br>Live at <strong>http://localhost:3000</strong> · repo at <strong>~/Desktop/Cap-DevRoom</strong></p>
+      <p class="meta">Shamikh Ahmed · Capricorn Systems · 13 agents · 8 sandbox apps</p>`
+  },
+  {
+    label: 'Thesis',
+    html: `<h2>Your executive office on your Mac</h2>
+      <p class="sub">Agents are markdown-defined employees. The dashboard orchestrates Cursor SDK runs against <strong>sandbox copies</strong> — never live portfolio repos.</p>
+      <div class="grid3">
+        <div class="card"><h3>Command</h3><p>CEO (APEX) parses natural-language tasks, delegates to specialists, gates risk through approvals.</p></div>
+        <div class="card"><h3>Sandbox-only</h3><p>8 Cap apps rsync'd to <code>sandboxes/</code>. realpath validation blocks escape to ~/Desktop/Projects.</p></div>
+        <div class="card"><h3>Portfolio</h3><p>VaultCap, PulseCap, PrismCap, SteadyCap, LedgerCap, DeePonyCap, ScentCap, AuraCap + hub.</p></div>
+      </div>`
+  },
+  {
+    label: 'Process',
+    html: `<h2>How a task flows</h2>
+      <div class="flow">
+        <span>CEO command / Approval</span><span class="arrow">→</span>
+        <span>Risk tier check</span><span class="arrow">→</span>
+        <span>Sandbox queue lock</span><span class="arrow">→</span>
+        <span>Cursor agent run</span><span class="arrow">→</span>
+        <span>Token + cost logged</span><span class="arrow">→</span>
+        <span>Activity + deliverables</span>
+      </div>
+      <ul class="checklist">
+        <li>Low risk (docs, reports) → auto-run</li>
+        <li>Medium/High (features, security) → CEO approval queue</li>
+        <li>One concurrent run per sandbox project</li>
+        <li>Handoff API ready for Cap · Markroom inbound tasks</li>
+      </ul>`
+  },
+  {
+    label: 'v3.1.0 — Security',
+    html: `<h2>Security hardening</h2>
+      <div class="grid2">
+        <div class="card"><h3>P0 fix</h3><p>Removed client <code>approved</code> flag from POST /api/agent/run. Only server-side <code>runAgentAfterApproval</code> executes post-approval.</p></div>
+        <div class="card"><h3>Sandbox escape</h3><p><code>validateSandboxPath()</code> uses fs.realpathSync — cwd must stay inside sandboxes/.</p></div>
+        <div class="card"><h3>API auth</h3><p>LAN/Render GET routes require DEVROOM_API_TOKEN. /api/approvals/reset blocked in production.</p></div>
+        <div class="card"><h3>Privacy</h3><p>Diagnostics redact Cursor account email in production responses.</p></div>
+      </div>`
+  },
+  {
+    label: 'v3.1.0 — Product',
+    html: `<h2>Product upgrades</h2>
+      <div class="grid2">
+        <div class="card"><h3>Token salaries</h3><p>Per-agent tokens, USD cost, run count on org chart cards via GET /api/agents/roster.</p></div>
+        <div class="card"><h3>Theme</h3><p>Light / dark / system toggle in Settings + sidebar quick-switch.</p></div>
+        <div class="card"><h3>Markroom parity</h3><p>Org chart, profile cards, handoff endpoint POST /api/handoff.</p></div>
+        <div class="card"><h3>Ops</h3><p>Stale sandbox warnings on /projects · cloud agents re-enabled with approval gate.</p></div>
+      </div>`
+  },
+  {
+    label: 'Verification',
+    html: `<h2>Automated checks — all passed</h2>
+      <ul class="checklist">
+        <li><code>npm run doctor</code> — 8/8 sandboxes, v3.1.0 sync, health OK</li>
+        <li><code>npm run type-check</code> — dashboard + packages clean</li>
+        <li><code>npm run build</code> — production build success</li>
+        <li><code>npm run sync:sandboxes</code> — metadata written, stale: false</li>
+        <li><code>GET /api/health</code> — database ok, cursorApi configured, 4 pending approvals</li>
+        <li><code>GET /api/agents/roster</code> — 13 agents with salary aggregation</li>
+      </ul>
+      <p class="meta">Dev server: http://localhost:3000 · CURSOR_API_KEY configured · SQLite at data/devroom.db</p>`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Command Center',
+    html: `<span class="label">Live UI</span><h2>Command Center</h2>
+      <p class="sub">CEO command, portfolio metrics, agent roster strip, night-shift greeting.</p>
+      <img class="shot" src="verification-screenshots/01-command-center.png" alt="Command center">`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Daily Briefing',
+    html: `<span class="label">Live UI</span><h2>Daily Briefing</h2>
+      <p class="sub">APEX directive, priority checklist, rules vs AI briefing generator.</p>
+      <img class="shot" src="verification-screenshots/06-briefing.png" alt="Briefing page">`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Projects',
+    html: `<span class="label">Live UI</span><h2>Projects</h2>
+      <p class="sub">11 tracked apps · 10 optimal · issue badges · LIVE links · stale sandbox warnings.</p>
+      <img class="shot" src="verification-screenshots/05-projects.png" alt="Projects page">`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Agents & Org Chart',
+    html: `<span class="label">Live UI</span><h2>Agents — Org chart + salaries</h2>
+      <p class="sub">13 codename agents · token · cost · runs on each profile card (0 until first job).</p>
+      <img class="shot" src="verification-screenshots/07-agents-roster.png" alt="Agents roster">`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Approvals',
+    html: `<span class="label">Live UI</span><h2>Approvals queue</h2>
+      <p class="sub">4 pending · PIXEL design pass · SHIELD e2e · VAULT security audit (HIGH).</p>
+      <img class="shot" src="verification-screenshots/04-approvals.png" alt="Approvals page">`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Settings',
+    html: `<span class="label">Live UI</span><h2>Settings — Light mode</h2>
+      <p class="sub">Theme toggle · iPhone LAN URL · system check 8/8 sandboxes · Cursor API authenticated.</p>
+      <img class="shot" src="verification-screenshots/03-settings.png" alt="Settings light mode">`
+  },
+  {
+    label: 'Screenshot',
+    title: 'Deliverables',
+    html: `<span class="label">Live UI</span><h2>Deliverables scan</h2>
+      <p class="sub">Scans sandbox copies for README, pitch, and presentation.html per app.</p>
+      <img class="shot" src="verification-screenshots/08-deliverables.png" alt="Deliverables scan">`
+  },
+  {
+    label: 'Known issues',
+    html: `<h2>Follow-ups (non-blocking)</h2>
+      <ul class="checklist">
+        <li class="warn">Briefing page: React hydration warning in dev overlay (Date/locale) — cosmetic in dev</li>
+        <li class="warn">Token salaries show 0 until first agent job completes</li>
+        <li class="warn">Briefing priority text still mentions Desktop/Projects — update seed copy</li>
+        <li>Cloud agents endpoint restored but not exercised in this session</li>
+        <li>Approve a LOW SHIELD task to populate salary metrics end-to-end</li>
+      </ul>`
+  },
+  {
+    label: 'Ship',
+    html: `<h1>Ready for <span class="accent">daily use</span></h1>
+      <p class="sub">Cap · DevRoom v3.1.0 is running, verified, and documented.<br>Screenshots in <code>docs/verification-screenshots/</code></p>
+      <div class="grid2" style="margin-top:28px">
+        <div class="card"><h3>Start</h3><p><code>cd ~/Desktop/Cap-DevRoom && npm run dev</code></p></div>
+        <div class="card"><h3>Sync</h3><p><code>npm run sync:sandboxes</code> weekly</p></div>
+      </div>
+      <p class="meta" style="margin-top:32px">← → or click dots · Esc for overview · Capricorn Systems 2026</p>`
+  }
+];
+
+const deck = document.getElementById('deck');
+const dotsEl = document.getElementById('dots');
+const counterEl = document.getElementById('counter');
+const progressEl = document.getElementById('progress');
+let idx = 0;
+
+slides.forEach((s, i) => {
+  const el = document.createElement('section');
+  el.className = 'slide' + (i === 0 ? ' active' : '');
+  el.innerHTML = s.html;
+  deck.appendChild(el);
+  const dot = document.createElement('button');
+  dot.className = 'dot' + (i === 0 ? ' on' : '');
+  dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+  dot.onclick = () => go(i);
+  dotsEl.appendChild(dot);
+});
+
+function go(n) {
+  const all = deck.querySelectorAll('.slide');
+  const allDots = dotsEl.querySelectorAll('.dot');
+  all[idx].classList.remove('active');
+  allDots[idx].classList.remove('on');
+  idx = (n + slides.length) % slides.length;
+  all[idx].classList.add('active');
+  allDots[idx].classList.add('on');
+  counterEl.textContent = (idx + 1) + ' / ' + slides.length;
+  progressEl.style.width = ((idx + 1) / slides.length * 100) + '%';
+  document.title = (slides[idx].title || 'Cap · DevRoom v3.1.0') + ' — slide ' + (idx + 1);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(idx + 1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+  if (e.key === 'Home') go(0);
+  if (e.key === 'End') go(slides.length - 1);
+});
+go(0);
+</script>
+</body>
+</html>

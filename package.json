@@ -1,0 +1,34 @@
+{
+  "name": "cap-devroom",
+  "private": true,
+  "version": "3.1.0",
+  "description": "Cap DevRoom — AI development office for the Cap portfolio (8 Cap apps)",
+  "workspaces": [
+    "dashboard",
+    "packages/*",
+    "mobile"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:stack": "bash scripts/dev-stack.sh",
+    "start": "npm run start -w @cap/devroom-dashboard",
+    "sync:sandboxes": "bash scripts/sync-sandboxes.sh",
+    "sync:portfolio-check": "bash scripts/sync-portfolio-check.sh",
+    "doctor": "bash scripts/doctor.sh",
+    "rebuild:packages": "bash scripts/rebuild-packages.sh",
+    "db:push": "npm run db:push -w @cap/devroom-database",
+    "db:generate": "npm run db:generate -w @cap/devroom-database",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "dev:mobile": "npm run start -w @cap/devroom-mobile"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.3"
+  },
+  "packageManager": "npm@10.2.4",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

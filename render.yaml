@@ -1,0 +1,33 @@
+# Cap · DevRoom — Render Blueprint
+# Optional cloud deploy (local Mac is primary). SQLite on persistent disk.
+
+envVarGroups:
+  - name: cap-devroom-shared
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+services:
+  - type: web
+    name: cap-devroom-dashboard
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: bash scripts/render-build.sh
+    startCommand: npm run start -w @cap/devroom-dashboard
+    healthCheckPath: /api/health
+    disk:
+      name: devroom-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - fromGroup: cap-devroom-shared
+      - key: DATABASE_URL
+        value: file:/data/devroom.db
+      - key: DEVROOM_ROOT
+        value: /opt/render/project/src
+      - key: DEVROOM_SANDBOX_ROOT
+        value: /opt/render/project/src/sandboxes
+      - key: CURSOR_API_KEY
+        sync: false

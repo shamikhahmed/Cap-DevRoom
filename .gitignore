@@ -1,0 +1,15 @@
+node_modules/
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.env.local
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+data/
+sandboxes/*
+!sandboxes/README.md
+.DS_Store
+*.log
+.env
+.env.local
+.turbo/
