@@ -3,247 +3,468 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cap · DevRoom v3.1.0 — Verification & Release</title>
+<title>Cap · DevRoom v3.1.0 — Investor Pitch</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0a0a0c; --bg2: #12121a; --bg3: #1a1a24;
-  --accent: #c9a227; --accent2: #8b6914;
-  --text: #f5f5f7; --text2: #a1a1aa; --text3: #52525b;
-  --ok: #30d158; --warn: #ffd60a; --err: #ff453a;
-  --border: rgba(255,255,255,0.08);
-  --mono: 'SF Mono','Fira Code',Consolas,monospace;
-  --sans: -apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--bg2:#0a0a0c;--bg3:#12121a;
+  --gold:#c9a227;--gold2:#f0d060;--gold-dim:#8b6914;
+  --text:#f5f5f7;--text2:#a1a1aa;--text3:#52525b;
+  --ok:#30d158;--warn:#ffd60a;--err:#ff453a;
+  --border:rgba(255,255,255,.08);
+  --glow:rgba(201,162,39,.22);
+  --mono:'SF Mono','Fira Code',Consolas,monospace;
+  --sans:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --ease:cubic-bezier(.22,1,.36,1);
 }
-html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:var(--sans); overflow:hidden; }
-#progress { position:fixed; top:0; left:0; height:3px; background:var(--accent); z-index:200; transition:width .4s ease; }
-#counter { position:fixed; bottom:28px; right:32px; font-family:var(--mono); font-size:12px; color:var(--text3); z-index:200; }
-#dots { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:200; flex-wrap:wrap; max-width:80vw; justify-content:center; }
-.dot { width:6px; height:6px; border-radius:50%; background:var(--text3); transition:all .3s ease; cursor:pointer; }
-.dot.on { width:16px; border-radius:3px; background:var(--accent); }
-#deck { position:relative; width:100vw; height:100vh; }
-.slide {
-  position:absolute; inset:0; display:flex; flex-direction:column;
-  justify-content:center; align-items:center; padding:48px 64px;
-  opacity:0; pointer-events:none; transform:translateY(12px);
-  transition:opacity .45s ease, transform .45s ease;
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;user-select:none;-webkit-font-smoothing:antialiased}
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.45}
+#aurora{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(ellipse 80% 60% at 20% 20%,rgba(201,162,39,.12),transparent 50%),
+  radial-gradient(ellipse 60% 50% at 80% 80%,rgba(139,105,20,.08),transparent 50%);
+  animation:auroraShift 18s ease-in-out infinite alternate}
+@keyframes auroraShift{0%{opacity:.6;transform:scale(1)}100%{opacity:1;transform:scale(1.08)}}
+#progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--gold-dim),var(--gold2));z-index:300;transition:width .5s var(--ease);box-shadow:0 0 12px var(--glow)}
+#counter{position:fixed;bottom:36px;right:40px;font-family:var(--mono);font-size:11px;color:var(--text3);z-index:300;letter-spacing:.1em}
+#dots{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:300;align-items:center;max-width:90vw;flex-wrap:wrap;justify-content:center}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);border:none;transition:all .35s var(--spring);cursor:pointer;padding:0}
+.dot.on{width:20px;border-radius:3px;background:var(--gold);box-shadow:0 0 10px var(--glow)}
+#fsBtn,#overviewBtn{position:fixed;top:24px;z-index:300;background:rgba(255,255,255,.06);backdrop-filter:blur(12px);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:99px;font-size:11px;cursor:pointer;letter-spacing:.04em;transition:background .2s}
+#fsBtn{right:24px}#overviewBtn{right:110px}
+#fsBtn:hover,#overviewBtn:hover{background:rgba(255,255,255,.12);color:var(--text)}
+#hint{position:fixed;top:24px;left:24px;z-index:300;font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+#deck{position:relative;width:100vw;height:100vh;z-index:1;perspective:1400px}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:56px 72px;opacity:0;pointer-events:none;transform:translateZ(-120px) rotateX(4deg) scale(.94);transition:opacity .55s var(--ease),transform .65s var(--ease);transform-style:preserve-3d}
+.slide.active{opacity:1;pointer-events:auto;transform:translateZ(0) rotateX(0) scale(1)}
+.slide.exit{opacity:0;transform:translateZ(-80px) rotateX(-2deg) scale(1.02)}
+.anim{opacity:0;transform:translateY(28px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.slide.active .anim{opacity:1;transform:translateY(0)}
+.slide.active .anim:nth-child(1){transition-delay:.04s}
+.slide.active .anim:nth-child(2){transition-delay:.12s}
+.slide.active .anim:nth-child(3){transition-delay:.2s}
+.slide.active .anim:nth-child(4){transition-delay:.28s}
+.slide.active .anim:nth-child(5){transition-delay:.36s}
+.slide.active .anim:nth-child(6){transition-delay:.44s}
+.slide.active .anim:nth-child(7){transition-delay:.52s}
+.slide.active .anim:nth-child(8){transition-delay:.6s}
+.label{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+h1{font-size:clamp(48px,7.5vw,88px);font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:18px;text-align:center}
+h2{font-size:clamp(26px,4vw,48px);font-weight:700;letter-spacing:-.025em;line-height:1.12;margin-bottom:16px;text-align:center}
+.tagline{font-size:clamp(15px,1.9vw,20px);color:var(--text2);line-height:1.6;max-width:680px;text-align:center}
+.accent{color:var(--gold);background:linear-gradient(135deg,var(--gold2),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.divider{width:48px;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);border-radius:2px;margin:20px auto;box-shadow:0 0 12px var(--glow)}
+.letter{display:inline-block;opacity:0;transform:translateY(50px) rotateX(-40deg);animation:letterUp .7s var(--spring) forwards}
+@keyframes letterUp{to{opacity:1;transform:translateY(0) rotateX(0)}}
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:18px}
+.stat-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+.stat{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.25);border-radius:16px;padding:18px 26px;text-align:center;min-width:130px;transition:transform .3s var(--spring),box-shadow .3s}
+.stat:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 40px rgba(0,0,0,.4),0 0 24px var(--glow)}
+.sv{font-family:var(--mono);font-size:clamp(24px,3.5vw,36px);font-weight:700;color:var(--gold2);letter-spacing:-.02em}
+.sk{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;margin-top:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%;max-width:920px;margin-top:24px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;max-width:920px;margin-top:24px}
+.card{padding:22px;text-align:left;transition:transform .35s var(--spring),border-color .35s}
+.card:hover{transform:translateY(-3px);border-color:rgba(201,162,39,.35)}
+.card h3{font-size:14px;margin-bottom:8px;color:var(--gold2);font-weight:700}
+.card p,.card li{font-size:13px;color:var(--text2);line-height:1.55}
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;margin:24px 0}
+.flow-node{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:12px;font-weight:600;text-align:center}
+.flow-arrow{color:var(--gold);font-size:18px;margin:0 6px;opacity:.7}
+.checklist{text-align:left;max-width:620px;width:100%;margin-top:20px;list-style:none}
+.checklist li{padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--text2);display:flex;gap:10px;align-items:flex-start}
+.checklist li::before{content:'✓';color:var(--ok);font-weight:700;flex-shrink:0}
+.checklist li.warn::before{content:'!';color:var(--warn)}
+.meta{font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:20px;text-align:center}
+/* 3D Phone */
+.phone-stage{perspective:1200px;margin-top:28px;display:flex;gap:32px;align-items:center;justify-content:center;flex-wrap:wrap}
+.phone-wrap{transform-style:preserve-3d;transition:transform .15s ease-out}
+.phone{
+  width:220px;height:460px;border-radius:36px;padding:10px;
+  background:linear-gradient(145deg,#2a2a2e,#0d0d0f);
+  box-shadow:0 40px 80px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.12),inset 0 1px 0 rgba(255,255,255,.15);
+  transform-style:preserve-3d;position:relative;
 }
-.slide.active { opacity:1; pointer-events:auto; transform:translateY(0); }
-.label { font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
-h1 { font-size:clamp(40px,6vw,72px); font-weight:800; letter-spacing:-.03em; line-height:1.05; margin-bottom:16px; text-align:center; }
-h2 { font-size:clamp(24px,3.5vw,42px); font-weight:700; letter-spacing:-.02em; line-height:1.15; margin-bottom:16px; text-align:center; }
-.sub { font-size:clamp(14px,1.8vw,18px); color:var(--text2); line-height:1.55; max-width:720px; text-align:center; }
-.accent { color:var(--accent); }
-.ok { color:var(--ok); }
-.err { color:var(--err); }
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; width:100%; max-width:960px; margin-top:24px; }
-.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; width:100%; max-width:960px; margin-top:24px; }
-.card { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:left; }
-.card h3 { font-size:15px; margin-bottom:8px; color:var(--accent); }
-.card p, .card li { font-size:13px; color:var(--text2); line-height:1.5; }
-.card ul { padding-left:18px; }
-.card li { margin-bottom:6px; }
-.shot { max-width:min(920px,90vw); max-height:min(520px,58vh); border-radius:10px; border:1px solid var(--border); box-shadow:0 20px 60px rgba(0,0,0,.5); margin-top:20px; object-fit:contain; background:var(--bg3); }
-.flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:24px; font-size:13px; }
-.flow span { background:var(--bg2); border:1px solid var(--border); padding:10px 14px; border-radius:8px; }
-.flow .arrow { background:none; border:none; color:var(--accent); font-size:18px; padding:0; }
-.checklist { text-align:left; max-width:640px; width:100%; margin-top:20px; }
-.checklist li { list-style:none; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; color:var(--text2); display:flex; gap:10px; align-items:flex-start; }
-.checklist li::before { content:'✓'; color:var(--ok); font-weight:700; flex-shrink:0; }
-.checklist li.warn::before { content:'!'; color:var(--warn); }
-.meta { font-family:var(--mono); font-size:11px; color:var(--text3); margin-top:24px; }
-kbd { background:var(--bg3); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:11px; }
-@media (max-width:768px) {
-  .slide { padding:32px 20px; }
-  .grid2, .grid3 { grid-template-columns:1fr; }
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);width:72px;height:22px;background:#000;border-radius:12px;z-index:2}
+.phone-screen{width:100%;height:100%;border-radius:28px;overflow:hidden;background:#0a0a0c;object-fit:cover;object-position:top;display:block}
+.phone-label{margin-top:14px;text-align:center;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em}
+.phone-hero{transform:rotateY(-18deg) rotateX(6deg)}
+.phone-side-l{transform:rotateY(22deg) rotateX(4deg) scale(.92);opacity:.85}
+.phone-side-r{transform:rotateY(-22deg) rotateX(4deg) scale(.92);opacity:.85}
+/* Desktop screenshot */
+.shot-wrap{position:relative;margin-top:24px;max-width:min(960px,92vw);transform-style:preserve-3d}
+.shot{
+  width:100%;max-height:min(480px,52vh);object-fit:contain;border-radius:14px;
+  border:1px solid var(--border);box-shadow:0 32px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.05);
+  transform:rotateX(2deg);transition:transform .4s var(--ease)
+}
+.shot-wrap:hover .shot{transform:rotateX(0) scale(1.01)}
+.shot-glow{position:absolute;inset:-20%;background:radial-gradient(ellipse at center,var(--glow),transparent 70%);z-index:-1;opacity:.5;pointer-events:none}
+/* Overview grid */
+#overview{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.92);backdrop-filter:blur(24px);display:none;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding:80px 40px 40px;overflow-y:auto;align-content:start}
+#overview.open{display:grid}
+.ov-item{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .25s var(--spring);font-size:11px;color:var(--text2)}
+.ov-item:hover,.ov-item.on{border-color:var(--gold);background:rgba(201,162,39,.1);color:var(--text);transform:scale(1.03)}
+.ov-num{font-family:var(--mono);font-size:10px;color:var(--gold);margin-bottom:6px}
+#ovClose{position:fixed;top:24px;right:24px;z-index:401;background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:99px;cursor:pointer;display:none;font-size:12px}
+#overview.open+#ovClose{display:block}
+.pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.pill{background:rgba(201,162,39,.12);border:1px solid rgba(201,162,39,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:600;color:var(--gold2)}
+@media(max-width:768px){
+  .slide{padding:32px 20px}
+  .grid2,.grid3{grid-template-columns:1fr}
+  .phone-stage{gap:16px}
+  .phone{width:160px;height:340px;border-radius:28px}
+  #hint{display:none}
 }
 </style>
 </head>
 <body>
+<canvas id="particles"></canvas>
+<div id="aurora"></div>
 <div id="progress"></div>
 <div id="counter"></div>
+<div id="hint">← → navigate · swipe · esc overview</div>
+<button id="overviewBtn" type="button">Overview</button>
+<button id="fsBtn" type="button">Fullscreen</button>
 <div id="dots"></div>
+<div id="overview"></div>
+<button id="ovClose" type="button">Close</button>
 <div id="deck"></div>
 
 <script>
+const IMG = 'verification-screenshots/';
+const MOB = IMG + 'mobile/';
+
 const slides = [
-  {
-    label: 'Capricorn Systems',
-    html: `<h1>Cap · DevRoom <span class="accent">v3.1.0</span></h1>
-      <p class="sub">Personal AI development office for the Cap portfolio — verified 17 June 2026.<br>Live at <strong>http://localhost:3000</strong> · repo at <strong>~/Desktop/Cap-DevRoom</strong></p>
-      <p class="meta">Shamikh Ahmed · Capricorn Systems · 13 agents · 8 sandbox apps</p>`
-  },
-  {
-    label: 'Thesis',
-    html: `<h2>Your executive office on your Mac</h2>
-      <p class="sub">Agents are markdown-defined employees. The dashboard orchestrates Cursor SDK runs against <strong>sandbox copies</strong> — never live portfolio repos.</p>
-      <div class="grid3">
-        <div class="card"><h3>Command</h3><p>CEO (APEX) parses natural-language tasks, delegates to specialists, gates risk through approvals.</p></div>
-        <div class="card"><h3>Sandbox-only</h3><p>8 Cap apps rsync'd to <code>sandboxes/</code>. realpath validation blocks escape to ~/Desktop/Projects.</p></div>
-        <div class="card"><h3>Portfolio</h3><p>VaultCap, PulseCap, PrismCap, SteadyCap, LedgerCap, DeePonyCap, ScentCap, AuraCap + hub.</p></div>
-      </div>`
-  },
-  {
-    label: 'Process',
-    html: `<h2>How a task flows</h2>
-      <div class="flow">
-        <span>CEO command / Approval</span><span class="arrow">→</span>
-        <span>Risk tier check</span><span class="arrow">→</span>
-        <span>Sandbox queue lock</span><span class="arrow">→</span>
-        <span>Cursor agent run</span><span class="arrow">→</span>
-        <span>Token + cost logged</span><span class="arrow">→</span>
-        <span>Activity + deliverables</span>
-      </div>
-      <ul class="checklist">
-        <li>Low risk (docs, reports) → auto-run</li>
-        <li>Medium/High (features, security) → CEO approval queue</li>
-        <li>One concurrent run per sandbox project</li>
-        <li>Handoff API ready for Cap · Markroom inbound tasks</li>
-      </ul>`
-  },
-  {
-    label: 'v3.1.0 — Security',
-    html: `<h2>Security hardening</h2>
-      <div class="grid2">
-        <div class="card"><h3>P0 fix</h3><p>Removed client <code>approved</code> flag from POST /api/agent/run. Only server-side <code>runAgentAfterApproval</code> executes post-approval.</p></div>
-        <div class="card"><h3>Sandbox escape</h3><p><code>validateSandboxPath()</code> uses fs.realpathSync — cwd must stay inside sandboxes/.</p></div>
-        <div class="card"><h3>API auth</h3><p>LAN/Render GET routes require DEVROOM_API_TOKEN. /api/approvals/reset blocked in production.</p></div>
-        <div class="card"><h3>Privacy</h3><p>Diagnostics redact Cursor account email in production responses.</p></div>
-      </div>`
-  },
-  {
-    label: 'v3.1.0 — Product',
-    html: `<h2>Product upgrades</h2>
-      <div class="grid2">
-        <div class="card"><h3>Token salaries</h3><p>Per-agent tokens, USD cost, run count on org chart cards via GET /api/agents/roster.</p></div>
-        <div class="card"><h3>Theme</h3><p>Light / dark / system toggle in Settings + sidebar quick-switch.</p></div>
-        <div class="card"><h3>Markroom parity</h3><p>Org chart, profile cards, handoff endpoint POST /api/handoff.</p></div>
-        <div class="card"><h3>Ops</h3><p>Stale sandbox warnings on /projects · cloud agents re-enabled with approval gate.</p></div>
-      </div>`
-  },
-  {
-    label: 'Verification',
-    html: `<h2>Automated checks — all passed</h2>
-      <ul class="checklist">
-        <li><code>npm run doctor</code> — 8/8 sandboxes, v3.1.0 sync, health OK</li>
-        <li><code>npm run type-check</code> — dashboard + packages clean</li>
-        <li><code>npm run build</code> — production build success</li>
-        <li><code>npm run sync:sandboxes</code> — metadata written, stale: false</li>
-        <li><code>GET /api/health</code> — database ok, cursorApi configured, 4 pending approvals</li>
-        <li><code>GET /api/agents/roster</code> — 13 agents with salary aggregation</li>
-      </ul>
-      <p class="meta">Dev server: http://localhost:3000 · CURSOR_API_KEY configured · SQLite at data/devroom.db</p>`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Command Center',
-    html: `<span class="label">Live UI</span><h2>Command Center</h2>
-      <p class="sub">CEO command, portfolio metrics, agent roster strip, night-shift greeting.</p>
-      <img class="shot" src="verification-screenshots/01-command-center.png" alt="Command center">`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Daily Briefing',
-    html: `<span class="label">Live UI</span><h2>Daily Briefing</h2>
-      <p class="sub">APEX directive, priority checklist, rules vs AI briefing generator.</p>
-      <img class="shot" src="verification-screenshots/06-briefing.png" alt="Briefing page">`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Projects',
-    html: `<span class="label">Live UI</span><h2>Projects</h2>
-      <p class="sub">11 tracked apps · 10 optimal · issue badges · LIVE links · stale sandbox warnings.</p>
-      <img class="shot" src="verification-screenshots/05-projects.png" alt="Projects page">`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Agents & Org Chart',
-    html: `<span class="label">Live UI</span><h2>Agents — Org chart + salaries</h2>
-      <p class="sub">13 codename agents · token · cost · runs on each profile card (0 until first job).</p>
-      <img class="shot" src="verification-screenshots/07-agents-roster.png" alt="Agents roster">`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Approvals',
-    html: `<span class="label">Live UI</span><h2>Approvals queue</h2>
-      <p class="sub">4 pending · PIXEL design pass · SHIELD e2e · VAULT security audit (HIGH).</p>
-      <img class="shot" src="verification-screenshots/04-approvals.png" alt="Approvals page">`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Settings',
-    html: `<span class="label">Live UI</span><h2>Settings — Light mode</h2>
-      <p class="sub">Theme toggle · iPhone LAN URL · system check 8/8 sandboxes · Cursor API authenticated.</p>
-      <img class="shot" src="verification-screenshots/03-settings.png" alt="Settings light mode">`
-  },
-  {
-    label: 'Screenshot',
-    title: 'Deliverables',
-    html: `<span class="label">Live UI</span><h2>Deliverables scan</h2>
-      <p class="sub">Scans sandbox copies for README, pitch, and presentation.html per app.</p>
-      <img class="shot" src="verification-screenshots/08-deliverables.png" alt="Deliverables scan">`
-  },
-  {
-    label: 'Known issues',
-    html: `<h2>Follow-ups (non-blocking)</h2>
-      <ul class="checklist">
-        <li class="warn">Briefing page: React hydration warning in dev overlay (Date/locale) — cosmetic in dev</li>
-        <li class="warn">Token salaries show 0 until first agent job completes</li>
-        <li class="warn">Briefing priority text still mentions Desktop/Projects — update seed copy</li>
-        <li>Cloud agents endpoint restored but not exercised in this session</li>
-        <li>Approve a LOW SHIELD task to populate salary metrics end-to-end</li>
-      </ul>`
-  },
-  {
-    label: 'Ship',
-    html: `<h1>Ready for <span class="accent">daily use</span></h1>
-      <p class="sub">Cap · DevRoom v3.1.0 is running, verified, and documented.<br>Screenshots in <code>docs/verification-screenshots/</code></p>
-      <div class="grid2" style="margin-top:28px">
-        <div class="card"><h3>Start</h3><p><code>cd ~/Desktop/Cap-DevRoom && npm run dev</code></p></div>
-        <div class="card"><h3>Sync</h3><p><code>npm run sync:sandboxes</code> weekly</p></div>
-      </div>
-      <p class="meta" style="margin-top:32px">← → or click dots · Esc for overview · Capricorn Systems 2026</p>`
-  }
+  { id:'hero', title:'Cap · DevRoom',
+    html:`<div class="label anim">Capricorn Systems · June 2026</div>
+    <h1 class="anim" id="heroTitle"></h1>
+    <div class="divider anim"></div>
+    <p class="tagline anim">Your AI development office for eight Cap apps.<br>13 agents · sandbox-only execution · CEO approval pipeline · native mobile companion.</p>
+    <div class="stat-row anim">
+      <div class="stat"><div class="sv" data-count="13">0</div><div class="sk">Agents</div></div>
+      <div class="stat"><div class="sv" data-count="8">0</div><div class="sk">Cap Apps</div></div>
+      <div class="stat"><div class="sv" data-count="11">0</div><div class="sk">Projects</div></div>
+      <div class="stat"><div class="sv">v3.1</div><div class="sk">Release</div></div>
+    </div>
+    <p class="meta anim">github.com/shamikhahmed/Cap-DevRoom · Shamikh Ahmed</p>` },
+
+  { id:'problem', title:'The Problem',
+    html:`<div class="label anim">Challenge</div>
+    <h2 class="anim">One founder.<br><span class="accent">Eight production apps.</span></h2>
+    <p class="tagline anim">Solo-dev portfolio at 1M-user quality bar — without touching live repos or losing control of risk.</p>
+    <div class="grid3 anim">
+      <div class="glass card"><h3>Context switching</h3><p>VaultCap crypto, PulseCap fitness, PrismCap games — each with different stacks and debt profiles.</p></div>
+      <div class="glass card"><h3>Agent chaos</h3><p>AI tools that write anywhere create security and regression risk across the portfolio.</p></div>
+      <div class="glass card"><h3>No executive layer</h3><p>Tasks need delegation, prioritization, and approval — not ad-hoc prompts.</p></div>
+    </div>` },
+
+  { id:'solution', title:'The Solution',
+    html:`<div class="label anim">Product</div>
+    <h2 class="anim">An executive office<br>on your <span class="accent">Mac</span></h2>
+    <p class="tagline anim">Markdown-defined agents. Cursor SDK runs in rsync sandboxes only. CEO gates medium/high risk work.</p>
+    <div class="grid3 anim">
+      <div class="glass card"><h3>Command</h3><p>APEX parses natural language, delegates to FORGE, PIXEL, SHIELD, VAULT, and ten other specialists.</p></div>
+      <div class="glass card"><h3>Sandbox-only</h3><p><code>realpath</code> validation — agents never escape to ~/Desktop/Projects.</p></div>
+      <div class="glass card"><h3>Mobile command</h3><p>Expo companion app — approve runs and delegate from iPhone on the same Wi‑Fi.</p></div>
+    </div>` },
+
+  { id:'flow', title:'How It Works',
+    html:`<div class="label anim">Architecture</div>
+    <h2 class="anim">Task flow</h2>
+    <div class="flow anim">
+      <span class="flow-node">CEO command</span><span class="flow-arrow">→</span>
+      <span class="flow-node">Risk tier</span><span class="flow-arrow">→</span>
+      <span class="flow-node">Approval queue</span><span class="flow-arrow">→</span>
+      <span class="flow-node">Sandbox lock</span><span class="flow-arrow">→</span>
+      <span class="flow-node">Cursor agent</span><span class="flow-arrow">→</span>
+      <span class="flow-node">Token log</span>
+    </div>
+    <ul class="checklist anim">
+      <li>Low risk → auto-run · Medium/High → CEO approval</li>
+      <li>One concurrent run per sandbox project</li>
+      <li>Handoff API for Cap · Markroom inbound tasks</li>
+      <li>Prisma SQLite · Turborepo monorepo · Next.js 16 dashboard</li>
+    </ul>` },
+
+  { id:'security', title:'Security',
+    html:`<div class="label anim">v3.1.0 · Trust</div>
+    <h2 class="anim">Security <span class="accent">hardened</span></h2>
+    <div class="grid2 anim">
+      <div class="glass card"><h3>P0 approval bypass fixed</h3><p>Client cannot set <code>approved</code> — only server-side <code>runAgentAfterApproval</code>.</p></div>
+      <div class="glass card"><h3>Sandbox escape blocked</h3><p><code>validateSandboxPath()</code> with fs.realpathSync.</p></div>
+      <div class="glass card"><h3>API auth</h3><p>DEVROOM_API_TOKEN for LAN/Render · reset blocked in production.</p></div>
+      <div class="glass card"><h3>Privacy</h3><p>Diagnostics redact Cursor email in production.</p></div>
+    </div>` },
+
+  { id:'product', title:'Product',
+    html:`<div class="label anim">v3.1.0 · Ship list</div>
+    <h2 class="anim">What shipped</h2>
+    <div class="grid2 anim">
+      <div class="glass card"><h3>Token salaries</h3><p>Per-agent tokens, USD cost, run count on org chart cards.</p></div>
+      <div class="glass card"><h3>Light / dark / system</h3><p>Markroom-parity theme toggle + sidebar quick-switch.</p></div>
+      <div class="glass card"><h3>Org chart + roster API</h3><p>13 agents with live status, workspace links, profile cards.</p></div>
+      <div class="glass card"><h3>Cap DevRoom Mobile</h3><p>Expo React Native — Home, Approvals, Agents, Settings.</p></div>
+    </div>
+    <div class="pills anim"><span class="pill">Cloud agents re-enabled</span><span class="pill">Stale sandbox warnings</span><span class="pill">Markroom handoff</span></div>` },
+
+  { id:'mobile', title:'Mobile App',
+    html:`<div class="label anim">Cap DevRoom Mobile · v1.0</div>
+    <h2 class="anim">Command from <span class="accent">your pocket</span></h2>
+    <p class="tagline anim">Native Expo app — same REST API as the dashboard. Approve SHIELD runs on the couch.</p>
+    <div class="phone-stage anim" id="phoneStage">
+      <div class="phone-wrap phone-side-l" data-tilt><div class="phone"><img class="phone-screen" src="${MOB}11-mobile-home.png" alt="Mobile home"></div><div class="phone-label">Command Center</div></div>
+      <div class="phone-wrap phone-hero" data-tilt><div class="phone"><img class="phone-screen" src="${MOB}09-mobile-approvals.png" alt="Mobile approvals"></div><div class="phone-label">Approvals</div></div>
+      <div class="phone-wrap phone-side-r" data-tilt><div class="phone"><img class="phone-screen" src="${MOB}12-mobile-agents.png" alt="Mobile agents"></div><div class="phone-label">Agents + Salaries</div></div>
+    </div>
+    <p class="meta anim">npm run dev:mobile · Expo Go · LAN URL in Settings</p>` },
+
+  { id:'mobile-settings', title:'Mobile Settings',
+    html:`<div class="label anim">Mobile · Connection</div>
+    <h2 class="anim">Wi‑Fi paired to Mac</h2>
+    <div class="phone-stage anim">
+      <div class="phone-wrap" data-tilt style="transform:rotateY(0)"><div class="phone" style="width:260px;height:540px"><img class="phone-screen" src="${MOB}10-mobile-settings.png" alt="Mobile settings"></div><div class="phone-label">Server URL + API token · Test connection</div></div>
+    </div>
+    <p class="tagline anim" style="margin-top:16px">Physical iPhone uses <strong>192.168.x.x:3000</strong> — not localhost.<br>Matches dashboard Settings → Run on iPhone.</p>` },
+
+  { id:'shot-home', title:'Command Center',
+    html:`<div class="label anim">Live · Dashboard</div>
+    <h2 class="anim">Command Center</h2>
+    <p class="tagline anim">CEO command · portfolio metrics · agent roster · night-shift mode</p>
+    <div class="shot-wrap anim"><div class="shot-glow"></div><img class="shot" src="${IMG}01-command-center.png" alt="Command center"></div>` },
+
+  { id:'shot-briefing', title:'Briefing',
+    html:`<div class="label anim">Live · Dashboard</div>
+    <h2 class="anim">Daily Briefing</h2>
+    <p class="tagline anim">APEX directive · priority checklist · rules vs AI briefing</p>
+    <div class="shot-wrap anim"><div class="shot-glow"></div><img class="shot" src="${IMG}06-briefing.png" alt="Briefing"></div>` },
+
+  { id:'shot-agents', title:'Agents',
+    html:`<div class="label anim">Live · Dashboard</div>
+    <h2 class="anim">Org chart + salaries</h2>
+    <p class="tagline anim">13 codename agents · token · cost · runs on every profile card</p>
+    <div class="shot-wrap anim"><div class="shot-glow"></div><img class="shot" src="${IMG}07-agents-roster.png" alt="Agents"></div>` },
+
+  { id:'shot-approvals', title:'Approvals',
+    html:`<div class="label anim">Live · Dashboard</div>
+    <h2 class="anim">Approval queue</h2>
+    <p class="tagline anim">PIXEL design pass · SHIELD e2e · VAULT security audit (HIGH)</p>
+    <div class="shot-wrap anim"><div class="shot-glow"></div><img class="shot" src="${IMG}04-approvals.png" alt="Approvals"></div>` },
+
+  { id:'shot-projects', title:'Projects',
+    html:`<div class="label anim">Live · Dashboard</div>
+    <h2 class="anim">Portfolio health</h2>
+    <p class="tagline anim">11 projects · 10 optimal · issue badges · stale sandbox warnings</p>
+    <div class="shot-wrap anim"><div class="shot-glow"></div><img class="shot" src="${IMG}05-projects.png" alt="Projects"></div>` },
+
+  { id:'verify', title:'Verified',
+    html:`<div class="label anim">Quality</div>
+    <h2 class="anim">All checks <span class="accent">passed</span></h2>
+    <ul class="checklist anim">
+      <li><code>npm run doctor</code> — 8/8 sandboxes · health OK</li>
+      <li><code>npm run build</code> + type-check clean</li>
+      <li><code>GET /api/health</code> — database ok · Cursor API configured</li>
+      <li>Browser walkthrough + mobile workspace linked</li>
+      <li>Public repo · docs + verification screenshots</li>
+    </ul>
+    <div class="stat-row anim">
+      <div class="stat"><div class="sv">8/8</div><div class="sk">Sandboxes</div></div>
+      <div class="stat"><div class="sv">100%</div><div class="sk">Doctor pass</div></div>
+    </div>` },
+
+  { id:'portfolio', title:'Portfolio',
+    html:`<div class="label anim">Cap family</div>
+    <h2 class="anim">Eight apps.<br>One <span class="accent">office.</span></h2>
+    <div class="pills anim">
+      <span class="pill">VaultCap</span><span class="pill">PulseCap</span><span class="pill">PrismCap</span>
+      <span class="pill">SteadyCap</span><span class="pill">LedgerCap</span><span class="pill">DeePonyCap</span>
+      <span class="pill">ScentCap</span><span class="pill">AuraCap</span>
+    </div>
+    <p class="tagline anim" style="margin-top:20px">DevRoom maintains engineering · Markroom handles marketing · Hub presents investors.</p>
+    <div class="grid2 anim" style="margin-top:24px">
+      <div class="glass card"><h3>Device sovereignty</h3><p>Vanilla JS PWAs · local-first · honest AI labeling.</p></div>
+      <div class="glass card"><h3>Solo-dev scale</h3><p>Production-grade bar without a team — agents as force multiplier.</p></div>
+    </div>` },
+
+  { id:'close', title:'Ship',
+    html:`<div class="label anim">Capricorn Systems · 2026</div>
+    <h1 class="anim">Ready for <span class="accent">daily use</span></h1>
+    <div class="divider anim"></div>
+    <p class="tagline anim">Cap · DevRoom v3.1.0 — dashboard + mobile + 13 agents.<br>Open source on GitHub. Built for Shamikh Ahmed's Cap portfolio.</p>
+    <div class="grid2 anim" style="margin-top:28px">
+      <div class="glass card"><h3>Start dashboard</h3><p><code>npm run dev:stack</code></p></div>
+      <div class="glass card"><h3>Start mobile</h3><p><code>npm run dev:mobile</code></p></div>
+    </div>
+    <p class="meta anim">← → · swipe · click dots · Esc overview · Cap · DevRoom</p>` }
 ];
 
+/* ── DOM ── */
 const deck = document.getElementById('deck');
 const dotsEl = document.getElementById('dots');
 const counterEl = document.getElementById('counter');
 const progressEl = document.getElementById('progress');
-let idx = 0;
+const overviewEl = document.getElementById('overview');
+let idx = 0, prevIdx = 0, touchX = 0;
 
 slides.forEach((s, i) => {
   const el = document.createElement('section');
   el.className = 'slide' + (i === 0 ? ' active' : '');
+  el.dataset.index = i;
   el.innerHTML = s.html;
   deck.appendChild(el);
+
   const dot = document.createElement('button');
   dot.className = 'dot' + (i === 0 ? ' on' : '');
-  dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+  dot.setAttribute('aria-label', s.title);
   dot.onclick = () => go(i);
   dotsEl.appendChild(dot);
+
+  const ov = document.createElement('div');
+  ov.className = 'ov-item' + (i === 0 ? ' on' : '');
+  ov.innerHTML = `<div class="ov-num">${String(i+1).padStart(2,'0')}</div>${s.title}`;
+  ov.onclick = () => { closeOverview(); go(i); };
+  overviewEl.appendChild(ov);
 });
 
-function go(n) {
-  const all = deck.querySelectorAll('.slide');
-  const allDots = dotsEl.querySelectorAll('.dot');
-  all[idx].classList.remove('active');
-  allDots[idx].classList.remove('on');
-  idx = (n + slides.length) % slides.length;
-  all[idx].classList.add('active');
-  allDots[idx].classList.add('on');
-  counterEl.textContent = (idx + 1) + ' / ' + slides.length;
-  progressEl.style.width = ((idx + 1) / slides.length * 100) + '%';
-  document.title = (slides[idx].title || 'Cap · DevRoom v3.1.0') + ' — slide ' + (idx + 1);
+function animateHeroLetters() {
+  const el = document.getElementById('heroTitle');
+  if (!el || el.dataset.done) return;
+  const text = 'Cap · DevRoom';
+  el.innerHTML = text.split('').map((c, i) =>
+    c === ' ' ? ' ' : `<span class="letter" style="animation-delay:${i * 0.04}s">${c}</span>`
+  ).join('');
+  el.dataset.done = '1';
 }
 
+function animateCounters(slide) {
+  slide.querySelectorAll('[data-count]').forEach(el => {
+    const target = +el.dataset.count;
+    if (el.dataset.animated) return;
+    el.dataset.animated = '1';
+    let n = 0;
+    const step = () => {
+      n += Math.ceil(target / 24);
+      if (n >= target) { el.textContent = target; return; }
+      el.textContent = n;
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function go(n, dir = 1) {
+  const all = deck.querySelectorAll('.slide');
+  const allDots = dotsEl.querySelectorAll('.dot');
+  const allOv = overviewEl.querySelectorAll('.ov-item');
+  if (n === idx) return;
+  prevIdx = idx;
+  all[idx].classList.remove('active');
+  all[idx].classList.add('exit');
+  allDots[idx].classList.remove('on');
+  allOv[idx]?.classList.remove('on');
+  idx = (n + slides.length) % slides.length;
+  setTimeout(() => all[prevIdx].classList.remove('exit'), 500);
+  all[idx].classList.add('active');
+  allDots[idx].classList.add('on');
+  allOv[idx]?.classList.add('on');
+  counterEl.textContent = String(idx + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+  progressEl.style.width = ((idx + 1) / slides.length * 100) + '%';
+  document.title = slides[idx].title + ' — Cap · DevRoom';
+  if (slides[idx].id === 'hero') animateHeroLetters();
+  animateCounters(all[idx]);
+}
+
+function openOverview() { overviewEl.classList.add('open'); }
+function closeOverview() { overviewEl.classList.remove('open'); }
+
+document.getElementById('overviewBtn').onclick = openOverview;
+document.getElementById('ovClose').onclick = closeOverview;
+document.getElementById('fsBtn').onclick = () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+};
+
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { overviewEl.classList.contains('open') ? closeOverview() : openOverview(); return; }
+  if (overviewEl.classList.contains('open')) return;
   if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(idx + 1); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
   if (e.key === 'Home') go(0);
   if (e.key === 'End') go(slides.length - 1);
 });
+
+document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  if (Math.abs(dx) > 60) go(idx + (dx < 0 ? 1 : -1));
+});
+
+/* 3D phone tilt */
+document.addEventListener('mousemove', e => {
+  const mx = (e.clientX / window.innerWidth - 0.5) * 2;
+  const my = (e.clientY / window.innerHeight - 0.5) * 2;
+  document.querySelectorAll('[data-tilt]').forEach((wrap, i) => {
+    const base = wrap.classList.contains('phone-hero') ? 0 : (wrap.classList.contains('phone-side-l') ? 18 : -18);
+    const rx = my * -6;
+    const ry = base + mx * 10;
+    wrap.style.transform = `rotateY(${ry}deg) rotateX(${rx}deg)`;
+  });
+  const active = deck.querySelector('.slide.active');
+  if (active && !active.querySelector('.phone-stage')) {
+    active.style.transform = `translateZ(0) rotateX(${my * -1.5}deg) rotateY(${mx * 1.5}deg)`;
+  }
+});
+
+/* Particles */
+(function particles() {
+  const c = document.getElementById('particles');
+  const ctx = c.getContext('2d');
+  let W, H, pts = [];
+  function resize() {
+    W = c.width = window.innerWidth;
+    H = c.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  for (let i = 0; i < 90; i++) {
+    pts.push({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 1.8 + 0.4, a: Math.random() * 0.35 + 0.08
+    });
+  }
+  function frame() {
+    ctx.clearRect(0, 0, W, H);
+    pts.forEach((p, i) => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,162,39,${p.a})`;
+      ctx.fill();
+      for (let j = i + 1; j < pts.length; j++) {
+        const q = pts[j];
+        const d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < 110) {
+          ctx.strokeStyle = `rgba(201,162,39,${0.06 * (1 - d / 110)})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+      }
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
 go(0);
+animateHeroLetters();
+animateCounters(deck.querySelector('.slide.active'));
 </script>
 </body>
 </html>
