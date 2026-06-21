@@ -68,7 +68,7 @@ Keep under 350 words. Plain text with short section headers. Direct, executive t
     const result = await Agent.prompt(prompt, {
       apiKey: apiKey(),
       model: { id: "composer-2" },
-      local: { cwd: DEVROOM_ROOT, settingSources: [] },
+      local: { cwd: DEVROOM_ROOT, settingSources: [] }, // DevRoom root — exec report is portfolio-wide, not project-specific
     });
     const narrative =
       typeof result?.result === "string" ? result.result : result?.result ? JSON.stringify(result.result) : "";

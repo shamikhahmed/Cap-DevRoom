@@ -16,8 +16,27 @@ function nextRun(cadence: Cadence, from = new Date()): Date {
   return d;
 }
 
+const DEFAULT_CREWS = [
+  { name: "Weekly QA Sweep", codename: "SHIELD", task: "Run a full QA sweep across the portfolio sandbox: check for console errors, broken routes, missing env vars, and failing tests. Report findings as issues.", cadence: "weekly" as Cadence, projectId: "VaultCap" },
+  { name: "Daily Readiness Scan", codename: "FORGE", task: "Scan all apps for launch readiness gaps: missing icons, outdated dependencies, missing privacy policy, no CI config. Update the readiness checklist.", cadence: "daily" as Cadence, projectId: "VaultCap" },
+  { name: "Weekly Debt Audit", codename: "FORGE", task: "Audit technical debt across sandboxes: deprecated APIs, TODO comments, large bundle sizes, unused dependencies. Create issues for anything critical.", cadence: "weekly" as Cadence, projectId: "VaultCap" },
+  { name: "Weekly Executive Briefing", codename: "APEX", task: "Generate a concise weekly briefing: what shipped, what's blocked, top 3 priorities, spend vs budget, one key risk. Keep under 200 words.", cadence: "weekly" as Cadence, projectId: "VaultCap" },
+];
+
+export async function seedDefaultCrews() {
+  await ensureDbReady();
+  const count = await prisma.scheduledRun.count();
+  if (count > 0) return;
+  for (const crew of DEFAULT_CREWS) {
+    await prisma.scheduledRun.create({
+      data: { ...crew, mode: "local", nextRunAt: nextRun(crew.cadence) },
+    });
+  }
+}
+
 export async function listScheduled() {
   await ensureDbReady();
+  await seedDefaultCrews();
   return prisma.scheduledRun.findMany({ orderBy: { createdAt: "desc" } });
 }
 

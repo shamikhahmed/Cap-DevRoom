@@ -34,18 +34,24 @@ export async function PATCH(req: Request) {
     if (status === "approved") {
       const task = updated.task || updated.description;
       if (task) {
-        void runAgentAfterApproval({
-          codename: updated.agent,
-          task,
-          projectId: updated.projectId,
-          risk: updated.risk as import("../../../app/lib/data").RiskTier,
-        }).catch((err) => {
-          console.error("[approvals] background agent run failed:", err);
-        });
-        return NextResponse.json({
-          approval: updated,
-          run: { status: "started", message: `${updated.agent} is working in the background. Watch progress on Home.` },
-        });
+        try {
+          const runResult = await runAgentAfterApproval({
+            codename: updated.agent,
+            task,
+            projectId: updated.projectId,
+            risk: updated.risk as import("../../../app/lib/data").RiskTier,
+          });
+          return NextResponse.json({
+            approval: updated,
+            run: runResult,
+          });
+        } catch (err) {
+          console.error("[approvals] agent enqueue failed:", err);
+          return NextResponse.json({
+            approval: updated,
+            run: { status: "error", message: err instanceof Error ? err.message : "Enqueue failed" },
+          });
+        }
       }
     }
 
