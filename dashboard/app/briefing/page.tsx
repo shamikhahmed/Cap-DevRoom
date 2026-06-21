@@ -213,40 +213,17 @@ export default function BriefingPage() {
 
   return (
     <AppShell>
-      <div style={{ padding: "28px", maxWidth: "820px" }}>
-        {/* Header */}
-        <div style={{ marginBottom: "28px" }}>
-          <div
-            style={{
-              fontSize: "9px",
-              letterSpacing: "2.5px",
-              color: "var(--text-muted)",
-              textTransform: "uppercase",
-              marginBottom: "6px",
-            }}
-          >
-            {BRAND.shortName.toUpperCase()} // DAILY BRIEFING
-          </div>
-          <div
-            className="font-heading"
-            style={{ fontSize: "26px", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "0.5px" }}
-          >
-            {dateStr}
-          </div>
-          <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", letterSpacing: "1px" }}>
-            {timeStr} // EXECUTIVE INTELLIGENCE SYSTEM
+      <div className="mo-page" style={{ maxWidth: 820 }}>
+        <div style={{ marginBottom: 28 }}>
+          <div className="mo-eyebrow">Daily briefing</div>
+          <h1 className="mo-title">{dateStr}</h1>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, letterSpacing: "0.06em" }}>
+            {timeStr} · Executive intelligence
           </div>
         </div>
 
         {/* Stats row */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "12px",
-            marginBottom: "24px",
-          }}
-        >
+        <div className="mo-stat-row" style={{ marginBottom: "24px" }}>
           {[
             { label: "Active Projects",   value: stats.active,    color: "var(--accent-cyan)"  },
             { label: "Open Bugs",         value: stats.bugs,      color: "var(--accent-amber)" },
@@ -279,17 +256,8 @@ export default function BriefingPage() {
         </div>
 
         {/* APEX Recommendation block */}
-        <div
-          style={{
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid rgba(0,212,255,0.25)",
-            borderRadius: "4px",
-            overflow: "hidden",
-            marginBottom: "20px",
-            boxShadow: "0 0 20px rgba(0,212,255,0.06) inset",
-          }}
-        >
-          <div style={{ height: "2px", backgroundColor: "var(--accent-cyan)", boxShadow: "0 0 10px var(--accent-cyan)" }} />
+        <div className="mo-card mo-accent-panel" style={{ marginBottom: 20, overflow: "hidden" }}>
+          <div className="mo-accent-panel-bar" />
           <div style={{ padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
               <span
@@ -303,9 +271,9 @@ export default function BriefingPage() {
                   fontSize: "9px",
                   padding: "2px 8px",
                   borderRadius: "2px",
-                  backgroundColor: "rgba(0,212,255,0.1)",
-                  color: "var(--accent-cyan)",
-                  border: "1px solid rgba(0,212,255,0.25)",
+                  backgroundColor: "var(--accent-soft)",
+                  color: "var(--accent)",
+                  border: "1px solid color-mix(in srgb, var(--accent) 28%, transparent)",
                   letterSpacing: "1px",
                 }}
               >
@@ -332,7 +300,7 @@ export default function BriefingPage() {
                 color: "var(--text-primary)",
                 lineHeight: 1.7,
                 margin: 0,
-                borderLeft: "2px solid var(--accent-cyan)",
+                borderLeft: "2px solid var(--accent)",
                 paddingLeft: "14px",
               }}
             >
@@ -436,7 +404,7 @@ export default function BriefingPage() {
             marginBottom: "24px",
           }}
         >
-          <div style={{ height: "2px", background: "linear-gradient(90deg, var(--accent-cyan), rgba(0,212,255,0.2))" }} />
+          <div className="mo-accent-panel-bar" style={{ background: "linear-gradient(90deg, var(--accent), transparent)" }} />
           <div style={{ padding: "18px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
               <span style={{ fontSize: "9px", letterSpacing: "2px", color: "var(--text-muted)", textTransform: "uppercase" }}>

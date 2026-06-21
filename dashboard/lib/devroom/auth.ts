@@ -14,6 +14,15 @@ const SENSITIVE_GET_PREFIXES = [
   "/api/scan/",
   "/api/setup/",
   "/api/handoff",
+  "/api/projects",
+  "/api/issues",
+  "/api/budget",
+  "/api/audit",
+  "/api/readiness",
+  "/api/priority",
+  "/api/scheduled",
+  "/api/exec-report",
+  "/api/worker",
 ];
 
 export function isLocalHost(host: string): boolean {

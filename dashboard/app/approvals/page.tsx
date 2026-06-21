@@ -121,6 +121,7 @@ export default function ApprovalsPage() {
       const data = await res.json();
       if (data.run?.message && decision === "approved") {
         setRunNotice(data.run.message);
+        setTimeout(() => setRunNotice(""), 12_000);
       }
       await load();
     } finally {

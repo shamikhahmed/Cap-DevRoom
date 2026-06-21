@@ -739,6 +739,7 @@ export function computePortfolioMetrics() {
   const activeProjects = projects.filter((p) => p.status === "active");
   return {
     activeProjects: activeProjects.length,
+    totalProjects: projects.length,
     openBugs: projects.reduce((s, p) => s + p.openBugs, 0),
     pendingApprovals: approvals.filter((a) => a.status === "pending").length,
     activeAgents: AGENTS.filter((a) => a.status === "active").length,

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { generateBriefing } from "../../../../lib/devroom/orchestrator";
+import { checkRateLimit } from "../../../../lib/devroom/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = checkRateLimit(req, "briefing/generate", { limit: 6, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const body = await req.json().catch(() => ({}));
     const projectId = String((body as { projectId?: string }).projectId || "VaultCap");

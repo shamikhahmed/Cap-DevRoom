@@ -1,5 +1,6 @@
 import { Agent, CursorAgentError } from "@cursor/sdk";
 import { PORTFOLIO_APPS } from "./portfolio";
+import { assertWithinBudget, recordSpend, BudgetExceededError } from "./budget";
 
 /** GitHub repos for Cloud Agents (production — not sandboxes) */
 export const CLOUD_REPOS: Record<string, { url: string; branch?: string }> =
@@ -56,6 +57,15 @@ export async function runCloudAgent(req: CloudRunRequest): Promise<CloudRunResul
     };
   }
 
+  try {
+    await assertWithinBudget();
+  } catch (e) {
+    if (e instanceof BudgetExceededError) {
+      return { ok: false, status: "error", output: "", error: e.message };
+    }
+    throw e;
+  }
+
   const prompt = `You are ${req.codename}, an agent in Cap DevRoom (Shamikh Ahmed's executive office).
 
 TASK (execute on the cloned repo):
@@ -81,6 +91,11 @@ Rules:
       typeof result.result === "string"
         ? result.result
         : JSON.stringify(result.result ?? result, null, 2);
+
+    const r = result as { usage?: { totalTokens?: number; costUsd?: number }; costUsd?: number };
+    const tokens = r.usage?.totalTokens ?? Math.ceil(output.length / 4);
+    const cost = r.usage?.costUsd ?? r.costUsd ?? tokens * 0.000003;
+    await recordSpend(tokens, cost);
 
     return {
       ok: result.status === "finished",

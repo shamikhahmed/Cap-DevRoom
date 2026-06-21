@@ -281,37 +281,23 @@ export default function TasksPage() {
 
   return (
     <AppShell>
-      <div style={{ padding: "28px", maxWidth: "900px" }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "24px" }}>
+      <div className="mo-page" style={{ maxWidth: 900 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 24 }}>
           <div>
-            <div style={{ fontSize: "9px", letterSpacing: "2.5px", color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "4px" }}>
-              DEVROOM // TASK QUEUE
-            </div>
-            <div className="font-heading" style={{ fontSize: "22px", fontWeight: 700, color: "var(--text-primary)" }}>
+            <div className="mo-eyebrow">Task queue</div>
+            <h1 className="mo-title">
               {pending} Pending Task{pending !== 1 ? "s" : ""}
-            </div>
-            <div style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "3px" }}>
+            </h1>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4 }}>
               {tasks.length} total · {tasks.filter((t) => t.status === "done").length} completed
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setShowForm(!showForm)}
-            className="btn-scan"
-            style={{
-              padding: "8px 16px",
-              backgroundColor: showForm ? "rgba(0,212,255,0.12)" : "var(--accent-cyan)",
-              color: showForm ? "var(--accent-cyan)" : "var(--bg-primary)",
-              border: showForm ? "1px solid rgba(0,212,255,0.35)" : "none",
-              borderRadius: "3px",
-              fontSize: "10px",
-              fontWeight: "bold",
-              letterSpacing: "1.5px",
-              cursor: "pointer",
-              fontFamily: "var(--font-data)",
-            }}
+            className="mo-btn mo-btn-primary"
           >
-            {showForm ? "✕ CANCEL" : "+ ADD TASK"}
+            {showForm ? "Cancel" : "+ Add task"}
           </button>
         </div>
 

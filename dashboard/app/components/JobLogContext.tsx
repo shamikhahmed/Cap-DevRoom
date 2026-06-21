@@ -61,7 +61,7 @@ export function JobLogProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshJobs();
-    const id = setInterval(refreshJobs, 4000);
+    const id = setInterval(refreshJobs, 8_000);
     return () => clearInterval(id);
   }, [refreshJobs]);
 

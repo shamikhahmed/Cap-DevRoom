@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppShell from "../../components/AppShell";
+import { useJobLog } from "../../components/JobLogContext";
 import { AGENTS, type Agent } from "../../lib/data";
 import { AGENT_PROMPT_TEMPLATES } from "../../lib/prompts";
 import { PORTFOLIO_APP_IDS } from "../../lib/portfolio";
@@ -36,6 +37,7 @@ export default function AgentWorkspacePage() {
   const codename = String(params.codename || "").toUpperCase();
   const agent = AGENTS.find((a) => a.codename === codename);
   const org = DEVROOM_AGENT_ORG[codename as keyof typeof DEVROOM_AGENT_ORG];
+  const { openDrawer } = useJobLog();
 
   const [task, setTask] = useState("");
   const [projectId, setProjectId] = useState("VaultCap");
@@ -74,7 +76,7 @@ export default function AgentWorkspacePage() {
       <AppShell>
         <div className="mo-page" style={{ padding: 28 }}>
           <p>Unknown agent: {codename}</p>
-          <button className="quick-action" onClick={() => router.push("/agents")}>
+          <button type="button" className="mo-btn" onClick={() => router.push("/agents")}>
             Back to roster
           </button>
         </div>
@@ -94,6 +96,7 @@ export default function AgentWorkspacePage() {
       });
       const data = await res.json();
       setOutput(data.output || data.error || JSON.stringify(data, null, 2));
+      if (data.ok && data.jobId) openDrawer(data.jobId);
     } catch (e) {
       setOutput(e instanceof Error ? e.message : "Run failed");
     } finally {
@@ -106,37 +109,32 @@ export default function AgentWorkspacePage() {
 
   return (
     <AppShell>
-      <div className="mo-page" style={{ padding: "28px", maxWidth: 900 }}>
-        <button
-          type="button"
-          className="quick-action"
-          style={{ marginBottom: 16, width: "auto" }}
-          onClick={() => router.push("/agents")}
-        >
-          ← Agents
+        <div className="mo-page" style={{ maxWidth: 900 }}>
+        <button type="button" className="mo-btn" style={{ marginBottom: 16 }} onClick={() => router.push("/agents")}>
+          ← Back to roster
         </button>
 
         <div className="mo-eyebrow">Agent workspace</div>
-        <h1 className="mo-title" style={{ color: accent }}>
+        <h1 className="mo-title mo-title-colored" style={{ color: accent }}>
           {agent.codename} · {agent.name}
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 20 }}>
           {org?.jobDescription ?? agent.description}
         </p>
 
-        <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1fr 1fr", marginBottom: 24 }}>
+        <div className="mo-detail-grid">
           <div className="mo-card" style={{ padding: 16 }}>
             <div className="mo-section-label">Department</div>
-            <div>{org?.department ?? agent.role}</div>
+            <div style={{ marginTop: 6 }}>{org?.department ?? agent.role}</div>
           </div>
           <div className="mo-card" style={{ padding: 16 }}>
             <div className="mo-section-label">Reports to</div>
-            <div>{org?.reportsTo ?? agent.reportsTo}</div>
+            <div style={{ marginTop: 6 }}>{org?.reportsTo ?? agent.reportsTo}</div>
           </div>
           {salary && (
             <div className="mo-card" style={{ padding: 16, gridColumn: "1 / -1" }}>
               <div className="mo-section-label">Token salary</div>
-              <div style={{ fontSize: 14, color: "var(--accent)" }}>
+              <div style={{ fontSize: 14, color: "var(--accent)", marginTop: 6 }}>
                 {salary.tokens.toLocaleString()} tokens · ${salary.cost.toFixed(4)} · {salary.runs} runs
               </div>
             </div>
@@ -150,7 +148,8 @@ export default function AgentWorkspacePage() {
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            style={{ width: "100%", marginBottom: 12, padding: 10, background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: 6 }}
+            className="mo-input"
+            style={{ width: "100%", marginBottom: 12 }}
           >
             {PORTFOLIO_APP_IDS.map((p) => (
               <option key={p} value={p}>{p}</option>
@@ -161,11 +160,12 @@ export default function AgentWorkspacePage() {
             onChange={(e) => setTask(e.target.value)}
             placeholder={`Task for ${codename}…`}
             rows={4}
-            style={{ width: "100%", marginBottom: 12, padding: 12, background: "var(--bg-primary)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: 6, resize: "vertical" }}
+            className="mo-input"
+            style={{ width: "100%", marginBottom: 12, resize: "vertical", minHeight: 96 }}
           />
           <button
             type="button"
-            className="quick-action"
+            className="mo-btn mo-btn-primary"
             disabled={running || !task.trim()}
             onClick={runLocal}
             style={{ opacity: running ? 0.6 : 1 }}
@@ -173,7 +173,7 @@ export default function AgentWorkspacePage() {
             {running ? "Running…" : "Run local agent"}
           </button>
           {output && (
-            <pre style={{ marginTop: 16, padding: 12, background: "var(--bg-primary)", borderRadius: 6, fontSize: 11, overflow: "auto", maxHeight: 320, whiteSpace: "pre-wrap" }}>
+            <pre className="mo-job-output" style={{ marginTop: 16, maxHeight: 320 }}>
               {output}
             </pre>
           )}
@@ -197,6 +197,7 @@ export default function AgentWorkspacePage() {
         </div>
 
         <div className="mo-card" style={{ padding: 20 }}>
+          <div className="mo-section-label" style={{ marginBottom: 12 }}>Recent jobs</div>
           {jobs.length === 0 ? (
             <p style={{ color: "var(--text-muted)", fontSize: 12 }}>No jobs yet for {codename}.</p>
           ) : (

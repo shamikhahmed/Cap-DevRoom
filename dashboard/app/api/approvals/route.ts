@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listServerApprovals, updateApproval } from "../../../lib/devroom/store";
 import { runAgentAfterApproval } from "../../../lib/devroom/orchestrator";
+import { audit } from "../../../lib/devroom/audit";
 
 export async function GET() {
   const approvals = await listServerApprovals();
@@ -15,8 +16,20 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "id and status required" }, { status: 400 });
   }
 
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    undefined;
+
   try {
-    const updated = await updateApproval(id, status);
+    const updated = await updateApproval(id, status, "founder");
+
+    await audit({
+      action: `approval.${status}`,
+      target: `${updated.agent}: ${updated.title}`,
+      detail: updated.task || updated.description,
+      ip,
+    });
 
     if (status === "approved") {
       const task = updated.task || updated.description;

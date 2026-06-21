@@ -46,15 +46,11 @@ export default function DeliverablesPage() {
 
   return (
     <AppShell>
-      <div style={{ padding: "24px", maxWidth: "900px" }}>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ fontSize: "9px", letterSpacing: "2.5px", color: "var(--text-muted)", textTransform: "uppercase" }}>
-            {BRAND.shortName.toUpperCase()} // DELIVERABLES SCAN
-          </div>
-          <div className="font-heading" style={{ fontSize: "22px", fontWeight: 700, color: "var(--text-primary)" }}>
-            README · Pitch · Presentations
-          </div>
-          <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "8px" }}>
+      <div className="mo-page" style={{ maxWidth: 900 }}>
+        <div style={{ marginBottom: 20 }}>
+          <div className="mo-eyebrow">Deliverables</div>
+          <h1 className="mo-title">README · Pitch · Presentations</h1>
+          <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>
             Scans sandbox copies. After fixing apps elsewhere, run{" "}
             <code style={{ color: "var(--accent)" }}>npm run sync:sandboxes</code> then rescan to pick up changes.
           </p>
@@ -86,7 +82,7 @@ export default function DeliverablesPage() {
           </div>
         ) : (
           <>
-            <div className="mo-deliverables-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "24px" }}>
+            <div className="mo-deliverables-grid" style={{ marginBottom: "24px" }}>
               {projects.map((pid) => (
                 <div
                   key={pid}

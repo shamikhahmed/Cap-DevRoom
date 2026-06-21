@@ -85,8 +85,28 @@ export async function setJobStatus(
   return toRecord(row);
 }
 
+/** Self-heal orphaned runs: a job stuck PROCESSING past the lock TTL means the
+ * process died mid-run. Flip it to FAILED so the UI doesn't spin forever. */
+export async function reapStaleJobs(maxAgeMs = 20 * 60_000): Promise<number> {
+  await ensureDbReady();
+  const cutoff = new Date(Date.now() - maxAgeMs);
+  const res = await prisma.agentJob.updateMany({
+    where: { status: "PROCESSING", updatedAt: { lt: cutoff } },
+    data: { status: "FAILED", error: "Run timed out or process restarted (orphaned)." },
+  });
+  return res.count;
+}
+
 export async function listJobs(limit = 50): Promise<AgentJobRecord[]> {
   await ensureDbReady();
+  await reapStaleJobs();
+  // Resume draining after a restart (UI polls this) — lazy import avoids a cycle.
+  try {
+    const { ensureWorker } = await import("./worker");
+    ensureWorker();
+  } catch {
+    /* worker optional */
+  }
   const rows = await prisma.agentJob.findMany({
     orderBy: { createdAt: "desc" },
     take: limit,

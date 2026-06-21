@@ -97,7 +97,11 @@ export default function HomeScreen() {
 
       {health ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 20 }}>
-          <MetricCard label="ACTIVE PROJECTS" value={10} hint={`v${health.version}`} />
+          <MetricCard
+            label="CAP APPS"
+            value={health.sandboxes?.length ?? 8}
+            hint={`v${health.version}`}
+          />
           <MetricCard
             label="PENDING APPROVALS"
             value={health.pendingApprovals}

@@ -1,6 +1,6 @@
 # Cap DevRoom — Claude context
 
-**Version:** 3.1.0 · **Package:** `cap-devroom` · **UI:** Cap · DevRoom
+**Version:** 3.2.0 · **Package:** `cap-devroom` · **UI:** Cap · DevRoom
 
 ## What this is
 

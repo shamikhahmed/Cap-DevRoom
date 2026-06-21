@@ -25,13 +25,6 @@ interface DiagnosticCheck {
   detail: string;
 }
 
-interface SetupStep {
-  step: number;
-  title: string;
-  detail: string;
-  env: string | null;
-}
-
 function StatusDot({ status }: { status: DiagnosticCheck["status"] }) {
   return <span className={`mo-status-dot ${status}`} aria-hidden />;
 }
@@ -95,7 +88,7 @@ export default function SettingsPage() {
       .then(setHealth)
       .catch(() => setHealthError("Can't reach Mac server — is start-dashboard.sh running?"))
       .finally(() => setHealthLoading(false));
-    fetch("/api/network").then((r) => r.json()).then(setNetwork);
+    fetch("/api/network").then((r) => r.json()).then(setNetwork).catch(() => setNetwork(null));
     runChecks();
   }, [runChecks]);
 
@@ -113,6 +106,13 @@ export default function SettingsPage() {
     } catch {
       /* ignore */
     }
+  }
+
+  function refreshNetwork() {
+    fetch("/api/network")
+      .then((r) => r.json())
+      .then(setNetwork)
+      .catch(() => setNetwork(null));
   }
 
   return (
@@ -163,13 +163,25 @@ export default function SettingsPage() {
               </button>
             </div>
           ) : (
-            <p style={{ fontSize: 12, color: "var(--accent-red)", marginTop: 12 }}>
-              No Wi‑Fi IP found — connect to Wi‑Fi and restart the server.
-            </p>
+            <div style={{ marginTop: 12 }}>
+              <p style={{ fontSize: 12, color: "var(--accent-red)", margin: "0 0 10px" }}>
+                No Wi‑Fi IP found — connect to Wi‑Fi and restart the server.
+              </p>
+              <button type="button" className="mo-btn" onClick={refreshNetwork}>
+                Refresh network info
+              </button>
+            </div>
           )}
-          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 12, marginBottom: 0 }}>
-            Mac only: {network?.localhost ?? "http://127.0.0.1:3000"}
-          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12, alignItems: "center" }}>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", margin: 0, flex: 1 }}>
+              Mac only: {network?.localhost ?? "http://127.0.0.1:3000"}
+            </p>
+            {network?.localhost && (
+              <button type="button" className="mo-btn" onClick={() => copyUrl(network.localhost)} style={{ fontSize: 11 }}>
+                Copy localhost
+              </button>
+            )}
+          </div>
         </section>
 
         {/* System check */}
@@ -274,7 +286,7 @@ export default function SettingsPage() {
           <div className="mo-section-label" style={{ marginBottom: 8 }}>Dashboard shows zeros?</div>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 12px" }}>
             Portfolio data lives in this browser&apos;s storage. Empty or old data shows 0 projects and 0 approvals.
-            Reset restores the demo portfolio (7 projects, 6 approvals, 30+ knowledge docs).
+            Reset restores the demo portfolio (10 projects, sample approvals, 27+ knowledge docs).
           </p>
           <button
             type="button"

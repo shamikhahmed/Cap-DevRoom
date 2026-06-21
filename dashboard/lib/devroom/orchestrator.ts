@@ -1,15 +1,14 @@
 import { Agent, CursorAgentError } from "@cursor/sdk";
 import { getAgent } from "./agents";
-import { assertNotProduction, DEVROOM_ROOT, resolveSandbox, validateSandboxPath } from "./sandboxes";
+import { DEVROOM_ROOT, resolveSandbox, validateSandboxPath } from "./sandboxes";
 import { normalizeProjectId } from "./portfolio";
 import { appendActivity } from "./store";
-import { createJob, setJobStatus } from "./jobs";
-import { getMemoryContext, getOfficeMemorySnapshot, recordAgentWork } from "./memory";
-import { withSandboxLock } from "./sandbox-queue";
+import { createJob } from "./jobs";
+import { getOfficeMemorySnapshot } from "./memory";
+import { assertWithinBudget, recordSpend, BudgetExceededError } from "./budget";
+import { parseCeoResponse } from "./validate";
+import { apiKey, extractTokens, extractCost, kickWorker } from "./worker";
 import type { RiskTier } from "../../app/lib/data";
-
-/** Cursor composer-2 rough cost per token (USD) for salary display */
-const COST_PER_TOKEN = 0.000003;
 
 export interface RunAgentRequest {
   codename: string;
@@ -27,7 +26,6 @@ export interface RunAgentResult {
   jobId?: string;
   error?: string;
   retryable?: boolean;
-  tokensUsed?: number;
 }
 
 export interface CeoAssignment {
@@ -46,46 +44,6 @@ export interface CeoCommandResult {
   error?: string;
 }
 
-function apiKey(): string {
-  const key = process.env.CURSOR_API_KEY?.trim();
-  if (!key) throw new Error("CURSOR_API_KEY missing — add to dashboard/.env.local");
-  return key;
-}
-
-function estimateTokens(text: string): number {
-  return Math.max(1, Math.ceil(text.length / 4));
-}
-
-function extractTokens(result: unknown, output: string): number {
-  const r = result as { usage?: { totalTokens?: number }; tokensUsed?: number };
-  if (typeof r?.usage?.totalTokens === "number") return r.usage.totalTokens;
-  if (typeof r?.tokensUsed === "number") return r.tokensUsed;
-  return estimateTokens(output);
-}
-
-async function buildAgentPrompt(codename: string, task: string, projectId: string, cwd: string): Promise<string> {
-  const def = getAgent(codename);
-  if (!def) throw new Error(`Unknown agent: ${codename}`);
-
-  const memory = await getMemoryContext(codename);
-
-  return `${def.systemPrompt}
-${memory ? `\nRECENT WORK MEMORY:\n${memory}\n` : ""}
----
-SANDBOX ONLY: You are working in a COPY at ${cwd}
-Project: ${projectId}
-NEVER reference or modify production paths under ~/Desktop/Projects/
-
-TASK:
-${task}
-
-RULES:
-- Minimal scope. Propose changes; implement only if task says "implement" or "fix".
-- List files you would change.
-- If checking deliverables (README, pitch, slides), report what already exists first.
-- End with a short executive summary for the CEO.`;
-}
-
 function riskNeedsApproval(risk: RiskTier): boolean {
   return risk === "Medium" || risk === "High";
 }
@@ -99,6 +57,11 @@ export async function runAgentAfterApproval(req: RunAgentRequest): Promise<RunAg
   return runAgentInternal(req, true);
 }
 
+/**
+ * Enqueue an agent run. Execution happens in the durable worker (worker.ts), not
+ * in this HTTP request — so a gateway timeout can never orphan a run. Callers get
+ * a jobId immediately and poll /api/jobs/{id} (the job drawer does this).
+ */
 async function runAgentInternal(req: RunAgentRequest, founderApproved: boolean): Promise<RunAgentResult> {
   const projectId = normalizeProjectId(req.projectId);
   const def = getAgent(req.codename);
@@ -124,88 +87,25 @@ async function runAgentInternal(req: RunAgentRequest, founderApproved: boolean):
     };
   }
 
-  return withSandboxLock(projectId, async () => {
-    const job = await createJob({
-      codename: req.codename,
-      task: req.task,
-      projectId,
-      risk,
-    });
-    await setJobStatus(job.id, "PROCESSING");
-
-    let cwd: string;
-    try {
-      cwd = resolveSandbox(projectId);
-      assertNotProduction(cwd);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Sandbox error";
-      await setJobStatus(job.id, "FAILED", { error: msg });
-      return { ok: false, status: "error", output: "", error: msg, jobId: job.id };
+  // Fast budget pre-check so the user gets immediate feedback (worker re-checks at run time).
+  try {
+    await assertWithinBudget();
+  } catch (e) {
+    if (e instanceof BudgetExceededError) {
+      return { ok: false, status: "error", output: "", error: e.message };
     }
+    throw e;
+  }
 
-    const prompt = await buildAgentPrompt(req.codename, req.task, projectId, cwd);
+  const job = await createJob({ codename: req.codename, task: req.task, projectId, risk });
+  kickWorker();
 
-    try {
-      const result = await Agent.prompt(prompt, {
-        apiKey: apiKey(),
-        model: { id: "composer-2" },
-        local: { cwd, settingSources: [] },
-      });
-
-      const output =
-        typeof result.result === "string"
-          ? result.result
-          : JSON.stringify(result.result ?? result, null, 2);
-
-      const tokensUsed = extractTokens(result, output);
-      const costUsd = tokensUsed * COST_PER_TOKEN;
-
-      await appendActivity({
-        agent: req.codename,
-        action: req.task.slice(0, 120),
-        type: result.status === "finished" ? "success" : "warning",
-        projectId,
-      });
-
-      await setJobStatus(job.id, result.status === "finished" ? "COMPLETED" : "FAILED", {
-        output: output.slice(0, 12000),
-        tokensUsed,
-        costUsd,
-      });
-
-      if (result.status === "finished") {
-        await recordAgentWork(
-          req.codename,
-          req.task.slice(0, 80),
-          output.slice(0, 600),
-          founderApproved ? "approved" : "completed"
-        );
-      }
-
-      return {
-        ok: result.status === "finished",
-        status: result.status,
-        output: output.slice(0, 12000),
-        jobId: job.id,
-        tokensUsed,
-      };
-    } catch (err) {
-      await setJobStatus(job.id, "FAILED", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-      if (err instanceof CursorAgentError) {
-        return {
-          ok: false,
-          status: "error",
-          output: "",
-          error: err.message,
-          retryable: err.isRetryable,
-          jobId: job.id,
-        };
-      }
-      throw err;
-    }
-  });
+  return {
+    ok: true,
+    status: "queued",
+    output: `Queued — ${def.codename} is running in the background. Watch the job drawer for progress.`,
+    jobId: job.id,
+  };
 }
 
 function planningSandbox(projectId: string): string {
@@ -216,8 +116,16 @@ function planningSandbox(projectId: string): string {
 export async function runCeoCommand(command: string, projectIdRaw = "VaultCap"): Promise<CeoCommandResult> {
   const projectId = normalizeProjectId(projectIdRaw);
   const hour = new Date().getHours();
-  const timeGreeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const timeGreeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  try {
+    await assertWithinBudget();
+  } catch (e) {
+    if (e instanceof BudgetExceededError) {
+      return { ok: false, greeting: timeGreeting + ", Shamikh.", message: "", assignments: [], error: e.message };
+    }
+    throw e;
+  }
 
   const agentList = (await import("./agents")).DEVROOM_AGENTS.filter((a) => a.codename !== "APEX")
     .map((a) => `${a.codename} (${a.name}): ${a.skills.join(", ")}`)
@@ -236,7 +144,7 @@ export async function runCeoCommand(command: string, projectIdRaw = "VaultCap"):
     };
   }
 
-  const prompt = `${getAgent("APEX")!.systemPrompt}
+  const basePrompt = `${getAgent("APEX")!.systemPrompt}
 
 Available agents:
 ${agentList}
@@ -254,57 +162,50 @@ Respond with VALID JSON only (no markdown fences):
   "assignments": [{ "agent": "CODENAME", "task": "...", "project": "${projectId}", "risk": "Low|Medium|High", "reason": "..." }]
 }`;
 
-  try {
-    const result = await Agent.prompt(prompt, {
-      apiKey: apiKey(),
-      model: { id: "composer-2" },
-      local: { cwd, settingSources: [] },
-    });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const prompt =
+      attempt === 0
+        ? basePrompt
+        : basePrompt + `\n\nIMPORTANT: Your previous reply was not valid JSON. Reply with ONLY the JSON object, nothing else.`;
+    try {
+      const result = await Agent.prompt(prompt, {
+        apiKey: apiKey(),
+        model: { id: "composer-2" },
+        local: { cwd, settingSources: [] },
+      });
 
-    const raw =
-      typeof result.result === "string" ? result.result : JSON.stringify(result.result);
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+      const raw = typeof result.result === "string" ? result.result : JSON.stringify(result.result);
+      const tokens = extractTokens(result, raw);
+      const { costUsd } = extractCost(result, tokens);
+      await recordSpend(tokens, costUsd);
+
+      const parsed = parseCeoResponse(raw, projectId);
+      if (!parsed) {
+        if (attempt === 0) continue;
+        return { ok: true, greeting: timeGreeting + ", Shamikh.", message: raw.slice(0, 2000), assignments: [] };
+      }
+
+      await appendActivity({ agent: "APEX", action: `CEO command: ${command.slice(0, 80)}`, type: "info", projectId });
+
       return {
         ok: true,
-        greeting: timeGreeting + ", Shamikh.",
-        message: raw.slice(0, 2000),
-        assignments: [],
+        greeting: parsed.greeting || timeGreeting + ", Shamikh.",
+        message: parsed.message,
+        assignments: parsed.assignments,
       };
+    } catch (err) {
+      if (attempt === 1) {
+        const msg = err instanceof CursorAgentError ? err.message : String(err);
+        return { ok: false, greeting: timeGreeting + ", Shamikh.", message: "", assignments: [], error: msg };
+      }
     }
-
-    const parsed = JSON.parse(jsonMatch[0]) as {
-      greeting?: string;
-      message?: string;
-      assignments?: CeoAssignment[];
-    };
-
-    await appendActivity({
-      agent: "APEX",
-      action: `CEO command: ${command.slice(0, 80)}`,
-      type: "info",
-      projectId,
-    });
-
-    return {
-      ok: true,
-      greeting: parsed.greeting || timeGreeting + ", Shamikh.",
-      message: parsed.message || "",
-      assignments: parsed.assignments || [],
-    };
-  } catch (err) {
-    const msg = err instanceof CursorAgentError ? err.message : String(err);
-    return {
-      ok: false,
-      greeting: timeGreeting + ", Shamikh.",
-      message: "",
-      assignments: [],
-      error: msg,
-    };
   }
+
+  return { ok: false, greeting: timeGreeting + ", Shamikh.", message: "", assignments: [], error: "Planning failed" };
 }
 
 export async function generateBriefing(projectId = "VaultCap"): Promise<string> {
+  await assertWithinBudget();
   const { scanDeliverables, deliverablesSummary } = await import("./deliverables");
   const hits = scanDeliverables();
   const summary = deliverablesSummary(hits);
@@ -333,7 +234,9 @@ Keep under 400 words. Plain text with section headers.`;
     local: { cwd, settingSources: [] },
   });
 
-  return typeof result.result === "string"
-    ? result.result
-    : JSON.stringify(result.result, null, 2);
+  const out = typeof result.result === "string" ? result.result : JSON.stringify(result.result, null, 2);
+  const tokens = extractTokens(result, out);
+  const { costUsd } = extractCost(result, tokens);
+  await recordSpend(tokens, costUsd);
+  return out;
 }

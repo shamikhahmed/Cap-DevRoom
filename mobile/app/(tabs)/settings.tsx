@@ -43,8 +43,22 @@ export default function SettingsScreen() {
     }
   }
 
-  function useLanExample() {
-    setUrlDraft("http://192.168.18.72:3000");
+  async function useLanFromServer() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const net = await getNetwork(urlDraft || baseUrl, tokenDraft || undefined);
+      if (net.lan) {
+        setUrlDraft(net.lan);
+        setLanHint(`Using Mac LAN URL: ${net.lan}`);
+      } else {
+        Alert.alert("No LAN IP", "Connect your Mac to Wi‑Fi and ensure DevRoom is running.");
+      }
+    } catch (e) {
+      Alert.alert("Network lookup failed", e instanceof Error ? e.message : "Could not reach server");
+    } finally {
+      setTesting(false);
+    }
   }
 
   return (
@@ -70,7 +84,7 @@ export default function SettingsScreen() {
           Use your Mac&apos;s LAN IP from DevRoom Settings, not localhost, on a physical iPhone.
         </Text>
         <View style={{ marginTop: 12 }}>
-          <ActionButton title="Use example LAN IP" variant="ghost" onPress={useLanExample} />
+          <ActionButton title="Fetch Mac LAN URL" variant="ghost" onPress={useLanFromServer} disabled={testing} />
         </View>
       </View>
 

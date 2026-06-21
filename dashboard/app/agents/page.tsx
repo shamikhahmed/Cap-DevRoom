@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import AppShell from "../components/AppShell";
 import { apiFetch } from "../lib/api-fetch";
 import { useJobLog } from "../components/JobLogContext";
-import { AGENTS, getProjects, getApprovals, getPriorities, type Agent } from "../lib/data";
+import { AGENTS, getProjects, getApprovals, getPriorities, type Agent, type AgentStatus } from "../lib/data";
 import { AGENT_PROMPT_TEMPLATES } from "../lib/prompts";
 import { PORTFOLIO_APP_IDS } from "../lib/portfolio";
 import {
@@ -77,6 +77,14 @@ function ActivatePanel({
   const [projectId, setProjectId] = useState("VaultCap");
   const [running, setRunning] = useState(false);
   const [runOutput, setRunOutput] = useState("");
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   function generatePrompt() {
     const tpl = AGENT_PROMPT_TEMPLATES[agent.codename];
@@ -482,19 +490,22 @@ function ActivatePanel({
 
 function AgentCard({
   agent,
+  liveStatus,
   onActivate,
 }: {
   agent: Agent;
+  liveStatus?: AgentStatus;
   onActivate: (a: Agent) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const sc = STATUS_CONFIG[agent.status];
+  const status = liveStatus ?? agent.status;
+  const sc = STATUS_CONFIG[status];
   const accent = AGENT_ACCENT[agent.codename] ?? "var(--accent-cyan)";
-  const isActive = agent.status === "active";
+  const isActive = status === "active";
 
   return (
     <div
-      className={`card-hover agent-border-${agent.status}`}
+      className={`card-hover agent-border-${status}`}
       style={{
         backgroundColor: "var(--bg-card)",
         border: `1px solid ${isActive ? "rgba(0,212,255,0.2)" : "var(--border)"}`,
@@ -682,6 +693,8 @@ export default function AgentsPage() {
   const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
   const [roster, setRoster] = useState<RosterAgent[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
+  const [showLegacy, setShowLegacy] = useState(false);
+  const [liveStatuses, setLiveStatuses] = useState<Record<string, AgentStatus>>({});
 
   useEffect(() => {
     fetch("/api/agents/roster")
@@ -689,6 +702,11 @@ export default function AgentsPage() {
       .then((d: { roster?: RosterAgent[] }) => setRoster(d.roster ?? []))
       .catch(() => setRoster([]))
       .finally(() => setRosterLoading(false));
+
+    fetch("/api/agents/status")
+      .then((r) => r.json())
+      .then((d: { statuses?: Record<string, AgentStatus> }) => setLiveStatuses(d.statuses ?? {}))
+      .catch(() => {});
   }, []);
 
   const filtered = filter === "all" ? AGENTS : AGENTS.filter((a) => a.status === filter);
@@ -711,8 +729,8 @@ export default function AgentsPage() {
       {activeAgent && (
         <ActivatePanel agent={activeAgent} onClose={() => setActiveAgent(null)} />
       )}
-      <div style={{ padding: "28px", maxWidth: 1100 }}>
-        <div style={{ marginBottom: "24px" }}>
+      <div className="mo-page" style={{ maxWidth: 1100 }}>
+        <div style={{ marginBottom: 24 }}>
           <div className="mo-eyebrow">DevRoom · Agents</div>
           <h1 className="mo-title" style={{ marginBottom: 8 }}>
             Your engineering office
@@ -750,81 +768,87 @@ export default function AgentsPage() {
         )}
 
         <div style={{ marginBottom: "16px" }}>
-          <div className="mo-section-label" style={{ marginBottom: 8 }}>
-            Legacy roster view
-          </div>
-          <div style={{ display: "flex", gap: "16px", marginBottom: 12 }}>
-            {[
-              { label: "active", color: "var(--accent-green)", count: counts.active },
-              { label: "idle", color: "var(--accent-amber)", count: counts.idle },
-              { label: "standby", color: "var(--text-muted)", count: counts.standby },
-            ].map((s) => (
-              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: "5px",
-                    height: "5px",
-                    borderRadius: "50%",
-                    backgroundColor: s.color,
-                  }}
-                />
-                <span style={{ fontSize: "10px", color: s.color }}>
-                  {s.count} {s.label}
-                </span>
+          <button
+            type="button"
+            className="mo-btn"
+            onClick={() => setShowLegacy((v) => !v)}
+            style={{ marginBottom: showLegacy ? 12 : 0 }}
+          >
+            {showLegacy ? "Hide" : "Show"} detailed roster ({AGENTS.length} agents)
+          </button>
+
+          {showLegacy && (
+            <>
+              <div className="mo-section-label" style={{ marginBottom: 8 }}>
+                Detailed roster
               </div>
-            ))}
-          </div>
-        </div>
+              <div style={{ display: "flex", gap: "16px", marginBottom: 12, flexWrap: "wrap" }}>
+                {[
+                  { label: "active", color: "var(--accent-green)", count: counts.active },
+                  { label: "idle", color: "var(--accent-amber)", count: counts.idle },
+                  { label: "standby", color: "var(--text-muted)", count: counts.standby },
+                ].map((s) => (
+                  <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "5px",
+                        height: "5px",
+                        borderRadius: "50%",
+                        backgroundColor: s.color,
+                      }}
+                    />
+                    <span style={{ fontSize: "10px", color: s.color }}>
+                      {s.count} {s.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-        {/* Filter bar */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
-          {(["all", "active", "idle", "standby"] as const).map((f) => {
-            const active = filter === f;
-            const color =
-              f === "active"  ? "var(--accent-green)"  :
-              f === "idle"    ? "var(--accent-amber)"  :
-              f === "standby" ? "var(--text-muted)"    :
-              "var(--accent-cyan)";
-            return (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className="btn-scan"
-                style={{
-                  padding: "6px 14px",
-                  fontSize: "9px",
-                  letterSpacing: "1px",
-                  textTransform: "uppercase",
-                  borderRadius: "3px",
-                  border: `1px solid ${active ? color : "var(--border)"}`,
-                  backgroundColor: active ? `${color}15` : "var(--bg-card)",
-                  color: active ? color : "var(--text-secondary)",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-data)",
-                }}
-              >
-                {f} ({counts[f]})
-              </button>
-            );
-          })}
-        </div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+                {(["all", "active", "idle", "standby"] as const).map((f) => {
+                  const active = filter === f;
+                  const color =
+                    f === "active"  ? "var(--accent-green)"  :
+                    f === "idle"    ? "var(--accent-amber)"  :
+                    f === "standby" ? "var(--text-muted)"    :
+                    "var(--accent-cyan)";
+                  return (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className="btn-scan"
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "9px",
+                        letterSpacing: "1px",
+                        textTransform: "uppercase",
+                        borderRadius: "3px",
+                        border: `1px solid ${active ? color : "var(--border)"}`,
+                        backgroundColor: active ? `${color}15` : "var(--bg-card)",
+                        color: active ? color : "var(--text-secondary)",
+                        cursor: "pointer",
+                        fontFamily: "var(--font-data)",
+                      }}
+                    >
+                      {f} ({counts[f]})
+                    </button>
+                  );
+                })}
+              </div>
 
-        {/* 2-column agent grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, 1fr)",
-            gap: "12px",
-          }}
-        >
-          {filtered.map((agent) => (
-            <AgentCard
-              key={agent.codename}
-              agent={agent}
-              onActivate={setActiveAgent}
-            />
-          ))}
+              <div className="mo-agents-legacy-grid">
+                {filtered.map((agent) => (
+                  <AgentCard
+                    key={agent.codename}
+                    agent={agent}
+                    liveStatus={liveStatuses[agent.codename]}
+                    onActivate={setActiveAgent}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </AppShell>

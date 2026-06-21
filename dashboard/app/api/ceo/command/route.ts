@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { runCeoCommand } from "../../../../lib/devroom/orchestrator";
 import { addApproval } from "../../../../lib/devroom/store";
 import { notifyCritical } from "../../../../lib/devroom/notify";
+import { checkRateLimit } from "../../../../lib/devroom/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = checkRateLimit(req, "ceo/command", { limit: 12, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const body = await req.json();
     const command = String(body.command || "").trim();

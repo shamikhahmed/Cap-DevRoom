@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppShell from "./components/AppShell";
 import CeoCommand from "./components/CeoCommand";
 import GreetingBanner from "./components/GreetingBanner";
+import PortfolioPulse from "./components/PortfolioPulse";
 import AgentJobProgress from "./components/AgentJobProgress";
 import {
   AGENTS,
@@ -37,11 +39,19 @@ function formatLogTime(iso: string): string {
   });
 }
 
-function seedFallbackLogs(): LogEntry[] {
-  return [];
-}
-
-/* Removed demo log pool — activity log shows real server events only */
+const EMPTY_METRICS: {
+  activeProjects: number;
+  totalProjects: number;
+  openBugs: number;
+  pendingApprovals: number;
+  activeAgents: number;
+} = {
+  activeProjects: 0,
+  totalProjects: 0,
+  openBugs: 0,
+  pendingApprovals: 0,
+  activeAgents: 0,
+};
 
 const LOG_COLORS: Record<LogType, string> = {
   info:     "var(--text-secondary)",
@@ -72,7 +82,23 @@ const AGENT_ACCENT: Record<string, string> = {
   INK:    "#bc8cff",
 };
 
+interface SystemStatus {
+  tasksPending: number;
+  lastBriefing: string;
+  optimal: number;
+  degraded: number;
+  knowledgeDocs: number;
+}
+
 /* ── Metric card ───────────────────────────────────────────── */
+
+const EMPTY_SYS_STATUS: SystemStatus = {
+  tasksPending: 0,
+  lastBriefing: "None",
+  optimal: 0,
+  degraded: 0,
+  knowledgeDocs: 0,
+};
 
 function MetricCard({
   label,
@@ -91,6 +117,7 @@ function MetricCard({
         <div
           className="font-heading count-animate"
           style={{ fontSize: 32, color: accentColor, lineHeight: 1, marginBottom: 8 }}
+          suppressHydrationWarning
         >
           {value}
         </div>
@@ -129,14 +156,17 @@ function AgentMiniCard({
   const isIdle = status === "idle";
 
   return (
-    <div
-      className={`card-hover agent-border-${status}`}
+    <Link
+      href={`/agents/${agent.codename.toLowerCase()}`}
+      className={`card-hover agent-border-${status} mo-agent-mini-link`}
       style={{
         backgroundColor: "var(--bg-card)",
         border: `1px solid ${isActive ? "rgba(212,168,83,0.3)" : "var(--border)"}`,
         borderRadius: "var(--radius-sm)",
         padding: "14px 16px",
         position: "relative",
+        textDecoration: "none",
+        display: "block",
       }}
     >
       {/* Status corner dot */}
@@ -199,91 +229,70 @@ function AgentMiniCard({
       {activeJob && (activeJob.status === "PENDING" || activeJob.status === "PROCESSING") && (
         <AgentJobProgress status={activeJob.status} task={activeJob.task} compact />
       )}
-    </div>
+    </Link>
   );
 }
 
 /* ── Page ──────────────────────────────────────────────────── */
 
-interface SystemStatus {
-  tasksPending: number;
-  lastBriefing: string;
-  optimal: number;
-  degraded: number;
-  knowledgeDocs: number;
-}
-
 export default function CommandCenter() {
   const router = useRouter();
-  const [metrics, setMetrics] = useState(() => {
-    const m = computePortfolioMetrics();
-    return {
-      activeProjects: m.activeProjects,
-      openBugs: m.openBugs,
-      pendingApprovals: m.pendingApprovals,
-      activeAgents: m.activeAgents,
-    };
-  });
-  const [sysStatus, setSysStatus] = useState<SystemStatus>(() => {
-    const m = computePortfolioMetrics();
-    return {
-      tasksPending: m.tasksPending,
-      lastBriefing: "None",
-      optimal: m.optimal,
-      degraded: m.degraded,
-      knowledgeDocs: m.knowledgeDocs,
-    };
-  });
+  const [metrics, setMetrics] = useState(EMPTY_METRICS);
+  const [sysStatus, setSysStatus] = useState<SystemStatus>(EMPTY_SYS_STATUS);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [agentStatuses, setAgentStatuses] = useState<Record<string, AgentStatus>>({});
   const [activeJobs, setActiveJobs] = useState<Record<string, AgentJob>>({});
-  const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    initStorage();
-    syncFromServer().then(() => {
+    let cancelled = false;
+
+    async function load() {
+      initStorage();
+      await syncFromServer();
+
       const m = computePortfolioMetrics();
-      setMetrics((prev) => ({
-        ...prev,
-        pendingApprovals: m.pendingApprovals,
-      }));
-      setSysStatus((prev) => ({ ...prev, tasksPending: m.tasksPending }));
-    });
-    const m = computePortfolioMetrics();
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((h) => {
+      if (cancelled) return;
+
+      const prefix = storageKey("briefing");
+      const briefingKeys = Object.keys(localStorage).filter((k) => k.startsWith(prefix));
+      let lastBriefing = "None";
+      if (briefingKeys.length > 0) {
+        briefingKeys.sort().reverse();
+        lastBriefing = briefingKeys[0].replace(prefix, "");
+      }
+
+      setSysStatus({
+        tasksPending: m.tasksPending,
+        lastBriefing,
+        optimal: m.optimal,
+        degraded: m.degraded,
+        knowledgeDocs: m.knowledgeDocs,
+      });
+
+      try {
+        const h = await fetch("/api/health").then((r) => r.json());
+        if (cancelled) return;
         setMetrics({
           activeProjects: m.activeProjects,
+          totalProjects: m.totalProjects,
           openBugs: m.openBugs,
           pendingApprovals: h.pendingApprovals ?? m.pendingApprovals,
           activeAgents: m.activeAgents,
         });
-      })
-      .catch(() => {
-        setMetrics({
-          activeProjects: m.activeProjects,
-          openBugs: m.openBugs,
-          pendingApprovals: m.pendingApprovals,
-          activeAgents: m.activeAgents,
-        });
-      });
-
-    const prefix = storageKey("briefing");
-    const briefingKeys = Object.keys(localStorage).filter((k) => k.startsWith(prefix));
-    let lastBriefing = "None";
-    if (briefingKeys.length > 0) {
-      briefingKeys.sort().reverse();
-      lastBriefing = briefingKeys[0].replace(prefix, "");
+      } catch {
+        if (!cancelled) {
+          setMetrics({
+            activeProjects: m.activeProjects,
+            totalProjects: m.totalProjects,
+            openBugs: m.openBugs,
+            pendingApprovals: m.pendingApprovals,
+            activeAgents: m.activeAgents,
+          });
+        }
+      }
     }
 
-    setSysStatus({
-      tasksPending: m.tasksPending,
-      lastBriefing,
-      optimal: m.optimal,
-      degraded: m.degraded,
-      knowledgeDocs: m.knowledgeDocs,
-    });
+    void load();
 
     const loadActivity = () => {
       fetch("/api/activity")
@@ -308,7 +317,7 @@ export default function CommandCenter() {
     };
 
     loadActivity();
-    const interval = setInterval(loadActivity, 5000);
+    const interval = setInterval(loadActivity, 15_000);
 
     const loadAgentStatus = () => {
       fetch("/api/agents/status")
@@ -342,12 +351,25 @@ export default function CommandCenter() {
         .catch(() => {});
     };
     loadJobs();
-    const jobsInterval = setInterval(loadJobs, 4000);
+    const jobsInterval = setInterval(loadJobs, 10_000);
+
+    const healthInterval = setInterval(() => {
+      fetch("/api/health")
+        .then((r) => r.json())
+        .then((h) => {
+          if (!cancelled && typeof h.pendingApprovals === "number") {
+            setMetrics((prev) => ({ ...prev, pendingApprovals: h.pendingApprovals }));
+          }
+        })
+        .catch(() => {});
+    }, 30_000);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
       clearInterval(statusInterval);
       clearInterval(jobsInterval);
+      clearInterval(healthInterval);
     };
   }, []);
 
@@ -360,11 +382,12 @@ export default function CommandCenter() {
         </div>
 
         <GreetingBanner />
+        <PortfolioPulse />
         <CeoCommand />
 
         {/* Metrics row */}
         <div className="mo-metrics" style={{ flexShrink: 0 }}>
-          <MetricCard label="Active Projects"   value={metrics.activeProjects}   accentColor="var(--accent-cyan)"  sub="of 10 total" />
+          <MetricCard label="Active Projects"   value={metrics.activeProjects}   accentColor="var(--accent-cyan)"  sub={`of ${metrics.totalProjects} total`} />
           <MetricCard label="Open Bugs"         value={metrics.openBugs}         accentColor="var(--accent-amber)" sub="across portfolio" />
           <MetricCard label="Pending Approvals" value={metrics.pendingApprovals} accentColor={metrics.pendingApprovals > 0 ? "var(--accent-red)" : "var(--accent-green)"} sub={metrics.pendingApprovals > 0 ? "action required" : "queue clear"} />
           <MetricCard label="Active Agents"     value={metrics.activeAgents}     accentColor="var(--accent-green)" sub={`${AGENTS.length - metrics.activeAgents} standby/idle`} />
@@ -390,18 +413,7 @@ export default function CommandCenter() {
         </div>
 
         {/* System status */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "10px",
-            flexShrink: 0,
-            padding: "12px 14px",
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-          }}
-        >
+        <div className="mo-system-status mo-card" style={{ flexShrink: 0, padding: "12px 14px" }}>
           <div className="mo-section-label" style={{ gridColumn: "1 / -1", marginBottom: 4 }}>
             System status
           </div>
@@ -466,7 +478,6 @@ export default function CommandCenter() {
 
             {/* Log entries */}
             <div
-              ref={logContainerRef}
               style={{
                 flex: 1,
                 overflowY: "auto",

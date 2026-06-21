@@ -12,6 +12,8 @@ export interface ServerApproval {
   createdAt: string;
   task?: string;
   source?: "demo" | "agent";
+  decidedBy?: string;
+  decidedAt?: string;
 }
 
 export interface ActivityLogEntry {
@@ -38,6 +40,8 @@ function toServerApproval(row: {
   createdAt: Date;
   task: string | null;
   source: string;
+  decidedBy?: string | null;
+  decidedAt?: Date | null;
 }): ServerApproval {
   return {
     id: row.id,
@@ -50,6 +54,8 @@ function toServerApproval(row: {
     createdAt: formatDate(row.createdAt),
     task: row.task ?? undefined,
     source: row.source as ServerApproval["source"],
+    decidedBy: row.decidedBy ?? undefined,
+    decidedAt: row.decidedAt ? row.decidedAt.toISOString() : undefined,
   };
 }
 
@@ -112,7 +118,11 @@ export async function addApproval(
   return toServerApproval(row);
 }
 
-export async function updateApproval(id: string, status: "approved" | "rejected") {
+export async function updateApproval(
+  id: string,
+  status: "approved" | "rejected",
+  actor = "founder"
+) {
   await ensureDbReady();
   const existing = await prisma.approval.findUnique({ where: { id } });
   if (!existing) throw new Error("not found");
@@ -121,6 +131,8 @@ export async function updateApproval(id: string, status: "approved" | "rejected"
     where: { id },
     data: {
       status,
+      decidedBy: actor,
+      decidedAt: new Date(),
       ...(status === "approved" && !existing.task
         ? {
             task: `Execute approved work: ${existing.title}. ${existing.description}`,

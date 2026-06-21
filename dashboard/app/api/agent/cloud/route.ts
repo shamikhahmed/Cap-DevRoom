@@ -3,9 +3,12 @@ import { runCloudAgent } from "../../../../lib/devroom/cloud";
 import { getAgent } from "../../../../lib/devroom/agents";
 import { addApproval } from "../../../../lib/devroom/store";
 import { normalizeProjectId } from "../../../../lib/devroom/portfolio";
+import { checkRateLimit } from "../../../../lib/devroom/rate-limit";
 import type { RiskTier } from "../../../../app/lib/data";
 
 export async function POST(req: Request) {
+  const limited = checkRateLimit(req, "agent/cloud", { limit: 8, windowMs: 60_000 });
+  if (limited) return limited;
   try {
     const body = await req.json();
     const codename = String(body.codename || "").trim();

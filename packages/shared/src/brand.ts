@@ -1,5 +1,5 @@
 /** Cap family · DevRoom app — single source for version + naming */
-export const APP_VERSION = "3.1.0";
+export const APP_VERSION = "3.2.0";
 
 export const BRAND = {
   family: "Cap",

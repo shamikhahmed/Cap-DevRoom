@@ -52,8 +52,8 @@ export default function ApiStatusBanner() {
   return (
     <div
       role="alert"
+      className="mo-api-banner"
       style={{
-        margin: "0 24px 0",
         padding: "12px 16px",
         borderRadius: "var(--radius-sm)",
         border: "1px solid rgba(255,170,0,0.35)",

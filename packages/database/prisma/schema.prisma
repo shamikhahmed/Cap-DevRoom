@@ -17,6 +17,8 @@ model Approval {
   status      String   @default("pending")
   task        String?
   source      String   @default("demo")
+  decidedBy   String?
+  decidedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -107,4 +109,112 @@ model Handoff {
 
   @@index([status])
   @@index([codename])
+}
+
+/// Real portfolio projects — replaces hardcoded DEFAULT_PROJECTS.
+model Project {
+  id          String   @id
+  name        String
+  description String   @default("")
+  status      String   @default("active") // active|paused|archived
+  stack       String?
+  liveUrl     String?
+  repoUrl     String?
+  openBugs    Int      @default(0)
+  health      Int      @default(100) // 0-100 score
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  issues      Issue[]
+}
+
+/// Linear/Jira-style issue tracker — the workflow spine.
+model Issue {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. VAULT-12
+  title     String
+  body      String   @default("")
+  status    String   @default("backlog") // backlog|todo|in_progress|in_review|done|canceled
+  priority  String   @default("medium") // urgent|high|medium|low|none
+  type      String   @default("task") // bug|feature|task|chore
+  agent     String? // assigned codename
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  labels    String   @default("[]")
+  jobId     String? // linked agent run
+  prUrl     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([projectId])
+  @@index([agent])
+}
+
+/// Immutable audit trail for sensitive actions (approvals, spend).
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String   @default("founder")
+  action    String // approval.approved, approval.rejected, budget.cap_hit...
+  target    String?
+  detail    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action])
+}
+
+/// Durable per-sandbox lock — survives restarts, works across instances.
+model SandboxLock {
+  projectId String   @id
+  jobId     String
+  holder    String   @default("agent")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+/// Recurring agent runs (cron-style autonomous crews).
+model ScheduledRun {
+  id        String    @id @default(cuid())
+  name      String
+  codename  String
+  task      String
+  projectId String    @default("VaultCap")
+  cadence   String    @default("daily") // hourly|daily|weekly
+  mode      String    @default("local") // local|cloud
+  enabled   Boolean   @default(true)
+  lastRunAt DateTime?
+  nextRunAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([enabled])
+}
+
+/// Daily AI spend ledger — enforces hard budget caps.
+model BudgetDay {
+  dateKey   String   @id // YYYY-MM-DD
+  tokens    Int      @default(0)
+  costUsd   Float    @default(0)
+  runs      Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// Per-app launch-readiness checks — auto-scanned + founder-approved.
+model ReadinessCheck {
+  id         String   @id @default(cuid())
+  projectId  String
+  checkId    String // stable definition id, e.g. "appstore.icon1024"
+  category   String // Product|Engineering|QA|Release|AppStore|Launch
+  label      String
+  status     String   @default("pending") // pass|warn|fail|pending|na
+  detail     String?
+  auto       Boolean  @default(true)
+  approvedBy String?
+  approvedAt DateTime?
+  updatedAt  DateTime @updatedAt
+
+  @@unique([projectId, checkId])
+  @@index([projectId])
 }

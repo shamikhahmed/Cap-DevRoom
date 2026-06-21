@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PORTFOLIO_APP_IDS } from "../lib/portfolio";
+import { useJobLog } from "./JobLogContext";
 
 interface Assignment {
   agent: string;
@@ -12,6 +13,7 @@ interface Assignment {
 }
 
 export default function CeoCommand() {
+  const { openDrawer } = useJobLog();
   const [command, setCommand] = useState("");
   const [projectId, setProjectId] = useState("VaultCap");
   const [loading, setLoading] = useState(false);
@@ -68,6 +70,7 @@ export default function CeoCommand() {
           ...r,
           [key]: data.output?.slice(0, 500) || "Done",
         }));
+        if (data.jobId) openDrawer(data.jobId);
       } else {
         setRunResults((r) => ({ ...r, [key]: `Error: ${data.error}` }));
       }
@@ -111,20 +114,18 @@ export default function CeoCommand() {
         <textarea
           value={command}
           onChange={(e) => setCommand(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
+          }}
           placeholder="Tell APEX what you need — e.g. audit PulseCap home screen fonts, check VaultCap pitch deck, polish ScentCap mobile layout…"
           rows={3}
+          className="mo-input"
           style={{
             width: "100%",
-            background: "var(--bg-primary)",
-            border: "1px solid var(--border)",
-            color: "var(--text-primary)",
-            padding: "14px 16px",
-            borderRadius: "var(--radius-sm)",
-            fontSize: 14,
-            fontFamily: "var(--font-ui)",
-            lineHeight: 1.5,
-            resize: "vertical",
             marginBottom: 12,
+            minHeight: 88,
+            resize: "vertical",
+            lineHeight: 1.5,
           }}
         />
         <button
@@ -135,6 +136,9 @@ export default function CeoCommand() {
         >
           {loading ? "APEX is thinking…" : "Delegate to office"}
         </button>
+        <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 8, marginBottom: 0 }}>
+          Tip: ⌘+Enter to delegate
+        </p>
         {error && (
           <div style={{ marginTop: "12px", fontSize: "11px", color: "var(--accent-red)" }}>{error}</div>
         )}
@@ -175,19 +179,12 @@ export default function CeoCommand() {
                   </div>
                   <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "8px" }}>{a.task}</div>
                   <button
+                    type="button"
                     onClick={() => runAssignment(a)}
-                    style={{
-                      fontSize: "9px",
-                      padding: "6px 12px",
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border-bright)",
-                      color: "var(--accent-cyan)",
-                      borderRadius: "3px",
-                      cursor: "pointer",
-                      letterSpacing: "1px",
-                    }}
+                    className="mo-btn mo-btn-primary"
+                    style={{ fontSize: 11, padding: "6px 12px" }}
                   >
-                    {a.risk === "Low" ? "RUN NOW" : "QUEUE / RUN"}
+                    {a.risk === "Low" ? "Run now" : "Queue / run"}
                   </button>
                   {runResults[key] && (
                     <pre
