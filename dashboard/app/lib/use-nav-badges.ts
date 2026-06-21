@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { getProjects, getTasks } from "./data";
+import { getTasks } from "./data";
 import type { NavBadgeKey } from "./nav";
 
 export interface NavBadges {
@@ -17,14 +17,25 @@ export function useNavBadges(): NavBadges {
   const [badges, setBadges] = useState<NavBadges>({ bugs: 0, approvals: 0, tasks: 0, issues: 0 });
 
   useEffect(() => {
-    const projects = getProjects();
     const tasks = getTasks();
-    setBadges((b) => ({
-      ...b,
-      bugs: projects.reduce((s, p) => s + p.openBugs, 0),
-      tasks: tasks.filter((t) => t.status !== "done").length,
-    }));
+    setBadges((b) => ({ ...b, tasks: tasks.filter((t) => t.status !== "done").length }));
 
+    // Single health fetch gives approvals + openBugs (live DB counts)
+    const refreshHealth = () =>
+      fetch("/api/health")
+        .then((r) => r.json())
+        .then((h) => {
+          setBadges((b) => ({
+            ...b,
+            approvals: h.pendingApprovals ?? 0,
+            bugs: h.openBugs ?? 0,
+          }));
+        })
+        .catch(() => {});
+
+    refreshHealth();
+
+    // Open issues count (not-done/canceled, any type)
     fetch("/api/issues")
       .then((r) => r.json())
       .then((d: { issues?: { status: string }[] }) => {
@@ -33,22 +44,7 @@ export function useNavBadges(): NavBadges {
       })
       .catch(() => {});
 
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((h) => {
-        setBadges((b) => ({ ...b, approvals: h.pendingApprovals ?? 0 }));
-      })
-      .catch(() => {});
-
-    const timer = setInterval(() => {
-      fetch("/api/health")
-        .then((r) => r.json())
-        .then((h) => {
-          setBadges((b) => ({ ...b, approvals: h.pendingApprovals ?? 0 }));
-        })
-        .catch(() => {});
-    }, 30_000);
-
+    const timer = setInterval(refreshHealth, 30_000);
     return () => clearInterval(timer);
   }, [pathname]);
 

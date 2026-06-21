@@ -110,14 +110,26 @@ export default function BriefingPage() {
     initStorage();
     syncFromServer().then(() => {
       setPriorities(getPriorities());
-      const projects = getProjects();
-      const approvals = getApprovals();
-      setStats({
-        active: projects.filter((p) => p.status === "active").length,
-        bugs: projects.reduce((s, p) => s + p.openBugs, 0),
-        approvals: approvals.filter((a) => a.status === "pending").length,
-      });
     });
+    // Pull live counts from DB via health endpoint
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h) => {
+        setStats({
+          active: h.activeProjects ?? 0,
+          bugs: h.openBugs ?? 0,
+          approvals: h.pendingApprovals ?? 0,
+        });
+      })
+      .catch(() => {
+        const projects = getProjects();
+        const approvals = getApprovals();
+        setStats({
+          active: projects.filter((p) => p.status === "active").length,
+          bugs: 0,
+          approvals: approvals.filter((a) => a.status === "pending").length,
+        });
+      });
     setPastBriefings(getPastBriefings());
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);

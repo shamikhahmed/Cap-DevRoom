@@ -11,11 +11,24 @@ export async function GET() {
   let database: "ok" | "unavailable" = "ok";
   let pendingApprovals = 0;
 
+  let openBugs = 0;
+  let activeProjects = 0;
+  let totalProjects = 0;
+
   try {
     await ensureDbReady();
     await prisma.$queryRaw`SELECT 1`;
     const approvals = await listServerApprovals();
     pendingApprovals = approvals.filter((a) => a.status === "pending").length;
+
+    const [bugCount, projActive, projTotal] = await Promise.all([
+      prisma.issue.count({ where: { type: "bug", status: { notIn: ["done", "canceled"] } } }),
+      prisma.project.count({ where: { status: "active" } }),
+      prisma.project.count(),
+    ]);
+    openBugs = bugCount;
+    activeProjects = projActive;
+    totalProjects = projTotal;
   } catch {
     database = "unavailable";
   }
@@ -29,6 +42,9 @@ export async function GET() {
     sandboxes,
     sandboxSync: sync,
     pendingApprovals,
+    openBugs,
+    activeProjects,
+    totalProjects,
     version: APP_VERSION,
   });
 }

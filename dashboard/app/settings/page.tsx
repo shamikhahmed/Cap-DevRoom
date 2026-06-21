@@ -29,6 +29,41 @@ function StatusDot({ status }: { status: DiagnosticCheck["status"] }) {
   return <span className={`mo-status-dot ${status}`} aria-hidden />;
 }
 
+function ServerTokenRow() {
+  const [token, setToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings/token")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setToken(d?.token ?? null))
+      .catch(() => setToken(null));
+  }, []);
+
+  if (!token) return (
+    <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>
+      No <code>DEVROOM_API_TOKEN</code> set on Mac — set it in <code>dashboard/.env.local</code> and restart.
+    </p>
+  );
+
+  async function copy() {
+    await navigator.clipboard.writeText(token!).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="mo-url-box" style={{ alignItems: "center" }}>
+      <code style={{ flex: 1, overflowX: "auto", whiteSpace: "nowrap" }}>
+        {show ? token : token.slice(0, 8) + "••••••••••••••••••••••••••••••••"}
+      </code>
+      <button type="button" className="mo-btn" onClick={() => setShow((s) => !s)} style={{ flexShrink: 0 }}>{show ? "Hide" : "Show"}</button>
+      <button type="button" className="mo-btn mo-btn-primary" onClick={copy} style={{ flexShrink: 0 }}>{copied ? "Copied!" : "Copy"}</button>
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { theme, setTheme, resolved } = useTheme();
   const [health, setHealth] = useState<Health | null>(null);
@@ -262,22 +297,26 @@ export default function SettingsPage() {
             API token (iPhone &amp; LAN)
           </div>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 12px" }}>
-            Set the same token in <code>dashboard/.env.local</code> as <code>DEVROOM_API_TOKEN</code> on your Mac,
-            then paste it here on iPhone so approvals and agent runs work over Wi‑Fi.
+            Token is set in <code>dashboard/.env.local</code> on your Mac. Copy it below, then paste it
+            into the iPhone app (Settings → API token) to enable approvals and agent runs over Wi‑Fi.
           </p>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input
-              type="password"
-              value={apiToken}
-              onChange={(e) => setApiToken(e.target.value)}
-              placeholder="Paste DEVROOM_API_TOKEN"
-              className="mo-input"
-              style={{ flex: 1, minWidth: 200 }}
-              autoComplete="off"
-            />
-            <button type="button" className="mo-btn mo-btn-primary" onClick={saveApiToken}>
-              {tokenSaved ? "Saved" : "Save token"}
-            </button>
+          <ServerTokenRow />
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "0.5px solid var(--border)" }}>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 8px" }}>Override token stored in this browser (iPhone use only):</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <input
+                type="password"
+                value={apiToken}
+                onChange={(e) => setApiToken(e.target.value)}
+                placeholder="Paste DEVROOM_API_TOKEN"
+                className="mo-input"
+                style={{ flex: 1, minWidth: 200 }}
+                autoComplete="off"
+              />
+              <button type="button" className="mo-btn mo-btn-primary" onClick={saveApiToken}>
+                {tokenSaved ? "Saved" : "Save token"}
+              </button>
+            </div>
           </div>
         </section>
 

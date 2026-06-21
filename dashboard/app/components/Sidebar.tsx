@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { BRAND } from "../lib/brand";
 import { NAV_ITEMS, type NavBadgeKey } from "../lib/nav";
@@ -11,6 +12,14 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { theme, setTheme, resolved } = useTheme();
   const badges = useNavBadges();
+  const [apiReady, setApiReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((h) => setApiReady(h.cursorApi === "configured"))
+      .catch(() => setApiReady(false));
+  }, []);
 
   function cycleTheme() {
     const order: ThemeMode[] = ["dark", "light", "system"];
@@ -47,7 +56,13 @@ export default function Sidebar() {
 
       <div className="mo-card mo-sidebar-footer">
         <div className="mo-sidebar-version">v{BRAND.version}</div>
-        <div className="mo-sidebar-meta">Cursor API connected · sandbox mode</div>
+        <div className="mo-sidebar-meta">
+          {apiReady === null
+            ? "Cursor API checking…"
+            : apiReady
+            ? "Cursor API ready · sandbox mode"
+            : "⚠ Cursor API key missing"}
+        </div>
         <button
           type="button"
           className="mo-btn"

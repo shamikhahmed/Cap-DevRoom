@@ -273,9 +273,9 @@ export default function CommandCenter() {
         const h = await fetch("/api/health").then((r) => r.json());
         if (cancelled) return;
         setMetrics({
-          activeProjects: m.activeProjects,
-          totalProjects: m.totalProjects,
-          openBugs: m.openBugs,
+          activeProjects: h.activeProjects ?? m.activeProjects,
+          totalProjects: h.totalProjects ?? m.totalProjects,
+          openBugs: h.openBugs ?? m.openBugs,
           pendingApprovals: h.pendingApprovals ?? m.pendingApprovals,
           activeAgents: m.activeAgents,
         });
