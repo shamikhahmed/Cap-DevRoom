@@ -40,18 +40,21 @@ export default function CommandPalette() {
 
   const commands = useMemo<Command[]>(
     () => [
-      { id: "nav-home", group: "Go to", label: "Home", hint: "Command center", run: go("/") },
-      { id: "nav-launch", group: "Go to", label: "Launch Readiness", hint: "Ship board", run: go("/launch") },
-      { id: "nav-issues", group: "Go to", label: "Issues", hint: "Tracker", run: go("/issues") },
-      { id: "nav-projects", group: "Go to", label: "Projects", run: go("/projects") },
-      { id: "nav-agents", group: "Go to", label: "Agents", run: go("/agents") },
-      { id: "nav-approvals", group: "Go to", label: "Approvals", run: go("/approvals") },
-      { id: "nav-briefing", group: "Go to", label: "Briefing", run: go("/briefing") },
-      { id: "nav-settings", group: "Go to", label: "Settings", run: go("/settings") },
-      { id: "act-newissue", group: "Create", label: "New issue", hint: "Track work", run: go("/issues?new=1") },
-      { id: "act-scan", group: "Run", label: "Scan all launch readiness", hint: "Self-check every app", run: post("/api/readiness", { action: "scanAll" }, "Scanning portfolio readiness") },
-      { id: "act-report", group: "Run", label: "Generate executive report", hint: "Board briefing", run: post("/api/exec-report", {}, "Generating executive report") },
-      { id: "act-due", group: "Run", label: "Run due scheduled crews", hint: "Autonomous tasks", run: async () => {
+      { id: "nav-home",        group: "Go to",  label: "Home",                   hint: "Command center",         run: go("/") },
+      { id: "nav-launch",      group: "Go to",  label: "Launch Control",         hint: "Ship board",             run: go("/launch") },
+      { id: "nav-departments", group: "Go to",  label: "Departments",            hint: "All offices",            run: go("/departments") },
+      { id: "nav-security",    group: "Go to",  label: "Security Audit",         hint: "VAULT office",           run: go("/security") },
+      { id: "nav-issues",      group: "Go to",  label: "Issues",                 hint: "Issue tracker",          run: go("/issues") },
+      { id: "nav-projects",    group: "Go to",  label: "Projects",               run: go("/projects") },
+      { id: "nav-agents",      group: "Go to",  label: "Agents",                 run: go("/agents") },
+      { id: "nav-approvals",   group: "Go to",  label: "Approvals",              run: go("/approvals") },
+      { id: "nav-briefing",    group: "Go to",  label: "Briefing",               run: go("/briefing") },
+      { id: "nav-settings",    group: "Go to",  label: "Settings",               run: go("/settings") },
+      { id: "act-newissue",    group: "Create", label: "New issue",              hint: "Track work",             run: go("/issues?new=1") },
+      { id: "act-scan",        group: "Run",    label: "Scan launch readiness",  hint: "Self-check every app",   run: post("/api/readiness", { action: "scanAll" }, "Scanning portfolio readiness") },
+      { id: "act-security",    group: "Run",    label: "Security audit",         hint: "VAULT scans sandboxes",  run: post("/api/security", { action: "scanAll" }, "Running security audit") },
+      { id: "act-report",      group: "Run",    label: "Executive report",       hint: "Board briefing",         run: post("/api/exec-report", {}, "Generating executive report") },
+      { id: "act-due",         group: "Run",    label: "Run due crews",          hint: "Autonomous tasks",       run: async () => {
         setOpen(false);
         toast({ title: "Running due crews" });
         try {

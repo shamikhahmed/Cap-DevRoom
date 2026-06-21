@@ -10,11 +10,12 @@ export interface NavBadges {
   approvals: number;
   tasks: number;
   issues: number;
+  security: number;
 }
 
 export function useNavBadges(): NavBadges {
   const pathname = usePathname();
-  const [badges, setBadges] = useState<NavBadges>({ bugs: 0, approvals: 0, tasks: 0, issues: 0 });
+  const [badges, setBadges] = useState<NavBadges>({ bugs: 0, approvals: 0, tasks: 0, issues: 0, security: 0 });
 
   useEffect(() => {
     const tasks = getTasks();
@@ -32,6 +33,12 @@ export function useNavBadges(): NavBadges {
           }));
         })
         .catch(() => {});
+
+    // Security critical count
+    fetch("/api/security")
+      .then((r) => r.json())
+      .then((d: { criticalCount?: number }) => setBadges((b) => ({ ...b, security: d.criticalCount ?? 0 })))
+      .catch(() => {});
 
     refreshHealth();
 

@@ -10,10 +10,12 @@ import PortfolioPulse from "./components/PortfolioPulse";
 import AgentJobProgress from "./components/AgentJobProgress";
 import {
   AGENTS,
+  DEPARTMENTS,
   initStorage,
   computePortfolioMetrics,
   type AgentStatus,
 } from "./lib/data";
+import CriticalAlerts from "./components/CriticalAlerts";
 import { syncFromServer } from "./lib/server-sync";
 import { storageKey } from "./lib/brand";
 
@@ -382,6 +384,7 @@ export default function CommandCenter() {
         </div>
 
         <GreetingBanner />
+        <CriticalAlerts />
         <PortfolioPulse />
         <CeoCommand />
 
@@ -396,10 +399,12 @@ export default function CommandCenter() {
         {/* Quick actions */}
         <div className="mo-quick-actions" style={{ flexShrink: 0 }}>
           {[
-            { label: "Generate briefing", href: "/briefing" },
-            { label: "Add task", href: "/tasks" },
-            { label: "Search knowledge", href: "/knowledge" },
+            { label: "Departments", href: "/departments" },
+            { label: "Security", href: "/security" },
+            { label: "Launch Control", href: "/launch" },
             { label: "Review approvals", href: "/approvals" },
+            { label: "Generate briefing", href: "/briefing" },
+            { label: "Issues", href: "/issues" },
           ].map((action) => (
             <button
               key={action.href}
@@ -410,6 +415,28 @@ export default function CommandCenter() {
               {action.label}
             </button>
           ))}
+        </div>
+
+        {/* Department status strip */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flexShrink: 0 }}>
+          {DEPARTMENTS.map((dept) => {
+            const deptAgents = AGENTS.filter((a) => a.department === dept.id);
+            const activeCount = deptAgents.filter((a) => activeJobs[a.codename]).length;
+            return (
+              <button
+                key={dept.id}
+                className="card-hover"
+                onClick={() => router.push("/departments")}
+                style={{ flex: "1 1 100px", minWidth: 80, padding: "8px 10px", borderRadius: "var(--radius-sm)", border: `0.5px solid ${activeCount > 0 ? "rgba(92,184,138,0.4)" : "var(--border)"}`, backgroundColor: activeCount > 0 ? "rgba(92,184,138,0.06)" : "var(--bg-card)", cursor: "pointer", textAlign: "left" }}
+              >
+                <div style={{ fontSize: 14, marginBottom: 2 }}>{dept.icon}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.5px", textTransform: "uppercase" }}>{dept.id}</div>
+                <div style={{ fontSize: 10, color: activeCount > 0 ? "var(--accent-green)" : "var(--text-secondary)", marginTop: 1 }}>
+                  {activeCount > 0 ? `${activeCount} active` : `${deptAgents.length} agents`}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* System status */}

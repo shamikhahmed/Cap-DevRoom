@@ -17,6 +17,16 @@ export interface Task {
   completedAt?: string;
 }
 
+export type Department =
+  | "Executive"
+  | "Product"
+  | "Engineering"
+  | "QA"
+  | "Security"
+  | "Release"
+  | "Portfolio"
+  | "Content";
+
 export interface Agent {
   codename: string;
   name: string;
@@ -25,6 +35,8 @@ export interface Agent {
   reportsTo: string;
   triggers: string[];
   status: AgentStatus;
+  department?: Department;
+  defaultModel?: "opus" | "sonnet" | "haiku";
 }
 
 export interface Project {
@@ -64,214 +76,259 @@ export interface Priority {
 }
 
 export const AGENTS: Agent[] = [
+  // ── Executive Office ─────────────────────────────────────────
   {
     codename: "APEX",
     name: "CEO",
     role: "Chief Executive Officer",
-    description:
-      "Highest-level strategic thinker. Challenges strategy, forces prioritization, protects long-term vision from short-term noise.",
+    description: "Highest-level strategic thinker. Challenges strategy, forces prioritization, protects long-term vision from short-term noise.",
     reportsTo: "Shamikh Ahmed",
-    triggers: [
-      "Vision alignment",
-      "Strategic decisions",
-      "Priority conflicts",
-      "Build vs buy",
-      "Market direction",
-    ],
+    triggers: ["Vision alignment", "Strategic decisions", "Priority conflicts", "Build vs buy", "Market direction"],
     status: "active",
+    department: "Executive",
+    defaultModel: "opus",
   },
   {
     codename: "FORGE",
     name: "CTO",
     role: "Chief Technology Officer",
-    description:
-      "Owns the architecture, engineering standards, and technical debt backlog. Thinks in systems, not features.",
+    description: "Owns the architecture, engineering standards, and technical debt backlog. Thinks in systems, not features.",
     reportsTo: "APEX",
-    triggers: [
-      "Architecture decisions",
-      "Tech stack selection",
-      "Engineering standards",
-      "Technical debt",
-      "System design",
-    ],
+    triggers: ["Architecture decisions", "Tech stack selection", "Engineering standards", "Technical debt", "System design"],
     status: "active",
+    department: "Engineering",
+    defaultModel: "opus",
   },
   {
     codename: "PRISM",
     name: "Product Manager",
     role: "Chief Product Officer",
-    description:
-      "Bridges user needs and engineering reality. Owns roadmap, backlog, and success metrics.",
+    description: "Bridges user needs and engineering reality. Owns roadmap, backlog, and success metrics.",
     reportsTo: "APEX",
-    triggers: [
-      "Feature scoping",
-      "Roadmap planning",
-      "User stories",
-      "Success metrics",
-      "Backlog prioritization",
-    ],
+    triggers: ["Feature scoping", "Roadmap planning", "User stories", "Success metrics", "Backlog prioritization"],
     status: "active",
+    department: "Product",
+    defaultModel: "sonnet",
   },
+
+  // ── Engineering Office ────────────────────────────────────────
   {
     codename: "PIXEL",
     name: "Frontend Architect",
     role: "Frontend Architect + UI/UX Lead",
-    description:
-      "Owns everything the user sees and touches. Thinks in systems — component libraries, design tokens, interaction patterns.",
+    description: "Owns everything the user sees and touches. Thinks in systems — component libraries, design tokens, interaction patterns.",
     reportsTo: "FORGE",
-    triggers: [
-      "UI component design",
-      "Design system",
-      "Accessibility",
-      "Frontend performance",
-      "UX patterns",
-    ],
+    triggers: ["UI component design", "Design system", "Accessibility", "Frontend performance", "UX patterns"],
     status: "idle",
+    department: "Engineering",
+    defaultModel: "sonnet",
   },
   {
     codename: "CORE",
     name: "Backend Architect",
     role: "Backend Architect + Infrastructure Lead",
-    description:
-      "Owns the server, the data, and the truth. Designs APIs, databases, and observable infrastructure.",
+    description: "Owns the server, the data, and the truth. Designs APIs, databases, and observable infrastructure.",
     reportsTo: "FORGE",
-    triggers: [
-      "API design",
-      "Database modeling",
-      "Infrastructure setup",
-      "Auth systems",
-      "Performance tuning",
-    ],
+    triggers: ["API design", "Database modeling", "Infrastructure setup", "Auth systems", "Performance tuning"],
     status: "idle",
+    department: "Engineering",
+    defaultModel: "sonnet",
   },
   {
-    codename: "SHIELD",
-    name: "QA Engineer",
-    role: "Quality Assurance Lead",
-    description:
-      "Adversarial by design. Breaks things before users do. Does not trust that code works — it verifies.",
+    codename: "NOVA",
+    name: "Mobile Lead",
+    role: "Mobile Engineering Lead",
+    description: "Owns all iOS and Android surfaces. React Native, Expo, App Store submission, push notifications, native APIs.",
     reportsTo: "FORGE",
-    triggers: [
-      "Test planning",
-      "Edge case analysis",
-      "Release validation",
-      "Regression checks",
-      "Quality gates",
-    ],
+    triggers: ["Mobile features", "App Store submission", "Play Store", "Expo config", "Native modules", "Push notifications"],
     status: "standby",
+    department: "Engineering",
+    defaultModel: "sonnet",
   },
+  {
+    codename: "ECHO",
+    name: "AI/ML Lead",
+    role: "Artificial Intelligence Lead",
+    description: "Owns AI features, model selection, prompt engineering, RAG pipelines, and cost optimization across all products.",
+    reportsTo: "FORGE",
+    triggers: ["AI features", "Model selection", "Prompt engineering", "Vector search", "Cost optimization", "AI safety"],
+    status: "standby",
+    department: "Engineering",
+    defaultModel: "opus",
+  },
+  {
+    codename: "ATLAS",
+    name: "Infrastructure Lead",
+    role: "DevOps + Infrastructure Director",
+    description: "CI/CD, Vercel/Render deployments, environment configs, monitoring, alerting, and zero-downtime releases.",
+    reportsTo: "FORGE",
+    triggers: ["CI/CD", "Deployment", "Environment variables", "Monitoring", "Scaling", "Infrastructure costs"],
+    status: "standby",
+    department: "Engineering",
+    defaultModel: "sonnet",
+  },
+
+  // ── QA Office ─────────────────────────────────────────────────
+  {
+    codename: "SHIELD",
+    name: "QA Director",
+    role: "Quality Assurance Director",
+    description: "Adversarial by design. Breaks things before users do. Does not trust that code works — it verifies.",
+    reportsTo: "FORGE",
+    triggers: ["Test planning", "Edge case analysis", "Release validation", "Regression checks", "Quality gates"],
+    status: "standby",
+    department: "QA",
+    defaultModel: "sonnet",
+  },
+  {
+    codename: "RADAR",
+    name: "Bug Hunter",
+    role: "Automated QA + Regression Tester",
+    description: "Continuously hunts regressions, edge cases, and integration failures. Never ships without a test plan.",
+    reportsTo: "SHIELD",
+    triggers: ["Regression testing", "Automated tests", "Test coverage", "Integration testing", "Bug reproduction"],
+    status: "standby",
+    department: "QA",
+    defaultModel: "haiku",
+  },
+
+  // ── Security Office ────────────────────────────────────────────
   {
     codename: "VAULT",
     name: "Security Officer",
     role: "Chief Security Officer",
-    description:
-      "Operates under assumption of breach. Models threats, identifies attack surfaces, eliminates vulnerabilities.",
+    description: "Operates under assumption of breach. Models threats, identifies attack surfaces, eliminates vulnerabilities.",
     reportsTo: "FORGE",
-    triggers: [
-      "Threat modeling",
-      "Security audit",
-      "Auth review",
-      "Dependency scanning",
-      "Incident response",
-    ],
+    triggers: ["Threat modeling", "Security audit", "Auth review", "Dependency scanning", "Incident response"],
     status: "standby",
+    department: "Security",
+    defaultModel: "opus",
   },
+  {
+    codename: "CIPHER",
+    name: "Compliance Officer",
+    role: "Security Compliance + Data Privacy Lead",
+    description: "GDPR, App Store privacy requirements, data handling policies. Nothing ships with compliance gaps.",
+    reportsTo: "VAULT",
+    triggers: ["GDPR compliance", "Privacy policy", "Data handling", "App Store requirements", "Legal review"],
+    status: "standby",
+    department: "Security",
+    defaultModel: "sonnet",
+  },
+
+  // ── Release + Portfolio Office ─────────────────────────────────
+  {
+    codename: "DELTA",
+    name: "Release Manager",
+    role: "Release + Launch Director",
+    description: "Owns the release process end to end. Generates release packages, coordinates go/no-go, manages store submissions.",
+    reportsTo: "APEX",
+    triggers: ["Release readiness", "Launch plan", "Go/no-go decision", "Version bump", "Release notes", "Store submission"],
+    status: "standby",
+    department: "Release",
+    defaultModel: "sonnet",
+  },
+  {
+    codename: "NEXUS",
+    name: "App Store Manager",
+    role: "App Store + Play Store Director",
+    description: "iOS App Store and Google Play submissions, metadata, screenshots, review compliance, and ASO.",
+    reportsTo: "DELTA",
+    triggers: ["App Store screenshots", "Metadata", "ASO", "Play Store", "Review guidelines", "App approval"],
+    status: "standby",
+    department: "Release",
+    defaultModel: "haiku",
+  },
+  {
+    codename: "SIGMA",
+    name: "Portfolio Analyst",
+    role: "Portfolio + Investment Analyst",
+    description: "Evaluates portfolio health, revenue potential, and investment signals. Tells the founder which app deserves the next dollar.",
+    reportsTo: "APEX",
+    triggers: ["Portfolio analysis", "Investment priority", "Revenue potential", "Market opportunity", "ROI analysis"],
+    status: "idle",
+    department: "Portfolio",
+    defaultModel: "sonnet",
+  },
+
+  // ── Content Office ─────────────────────────────────────────────
   {
     codename: "LENS",
     name: "Research Agent",
     role: "Chief Research Officer",
-    description:
-      "Does not speculate. Investigates. Gathers evidence, evaluates sources, compares alternatives, delivers clear recommendations.",
+    description: "Does not speculate. Investigates. Gathers evidence, evaluates sources, compares alternatives, delivers clear recommendations.",
     reportsTo: "APEX",
-    triggers: [
-      "Technology evaluation",
-      "Competitive analysis",
-      "Market research",
-      "Fact-checking",
-      "Due diligence",
-    ],
+    triggers: ["Technology evaluation", "Competitive analysis", "Market research", "Fact-checking", "Due diligence"],
     status: "idle",
+    department: "Product",
+    defaultModel: "sonnet",
   },
   {
     codename: "SCROLL",
     name: "Documentation Agent",
     role: "Chief Knowledge Officer",
-    description:
-      "Ensures nothing important is ever forgotten and nothing built is ever undiscoverable.",
+    description: "Ensures nothing important is ever forgotten and nothing built is ever undiscoverable.",
     reportsTo: "FORGE",
-    triggers: [
-      "Docs generation",
-      "Changelog writing",
-      "Knowledge capture",
-      "API documentation",
-      "Onboarding guides",
-    ],
+    triggers: ["Docs generation", "Changelog writing", "Knowledge capture", "API documentation", "Onboarding guides"],
     status: "standby",
+    department: "Content",
+    defaultModel: "haiku",
   },
   {
     codename: "INK",
     name: "Content Agent",
     role: "Chief Content Officer",
-    description:
-      "Strategic communicator who understands users, markets, and psychology. Writes copy that converts.",
+    description: "Strategic communicator who understands users, markets, and psychology. Writes copy that converts.",
     reportsTo: "APEX",
-    triggers: [
-      "Marketing copy",
-      "Product narratives",
-      "Blog content",
-      "Launch messaging",
-      "Social content",
-    ],
+    triggers: ["Marketing copy", "Product narratives", "Blog content", "Launch messaging", "Social content"],
     status: "standby",
+    department: "Content",
+    defaultModel: "haiku",
   },
   {
     codename: "QUILL",
     name: "Writing Lead",
     role: "Chief Writing Officer",
-    description:
-      "Long-form writing, editing, product narrative, blog posts. Checks existing copy before duplicating.",
+    description: "Long-form writing, editing, product narrative, blog posts. Checks existing copy before duplicating.",
     reportsTo: "APEX",
-    triggers: [
-      "Writing",
-      "Blog drafts",
-      "Copy editing",
-      "Product story",
-      "Tone and voice",
-    ],
+    triggers: ["Writing", "Blog drafts", "Copy editing", "Product story", "Tone and voice"],
     status: "idle",
+    department: "Content",
+    defaultModel: "haiku",
   },
   {
     codename: "SLIDE",
     name: "Presentation Architect",
     role: "Presentation Lead",
-    description:
-      "Slide decks, keynote structure, demo flows. Scans for existing presentations before creating new ones.",
+    description: "Slide decks, keynote structure, demo flows. Scans for existing presentations before creating new ones.",
     reportsTo: "APEX",
-    triggers: [
-      "Presentations",
-      "Slide decks",
-      "Keynote",
-      "Demo flow",
-      "Pitch deck visuals",
-    ],
+    triggers: ["Presentations", "Slide decks", "Keynote", "Demo flow", "Pitch deck visuals"],
     status: "standby",
+    department: "Content",
+    defaultModel: "sonnet",
   },
   {
     codename: "PITCH",
     name: "Investor Relations",
     role: "Pitch Strategist",
-    description:
-      "Investor one-pagers, pitch narratives, traction framing. Honest solo-dev positioning.",
+    description: "Investor one-pagers, pitch narratives, traction framing. Honest solo-dev positioning.",
     reportsTo: "APEX",
-    triggers: [
-      "Investor pitch",
-      "Fundraising",
-      "One-pager",
-      "VC deck",
-      "Market sizing",
-    ],
+    triggers: ["Investor pitch", "Fundraising", "One-pager", "VC deck", "Market sizing"],
     status: "idle",
+    department: "Portfolio",
+    defaultModel: "opus",
   },
+];
+
+export const DEPARTMENTS: { id: Department; label: string; head: string; icon: string; description: string }[] = [
+  { id: "Executive",   label: "Executive Office",    head: "APEX",   icon: "◈", description: "Strategy, vision, CEO command" },
+  { id: "Product",     label: "Product Office",      head: "PRISM",  icon: "◉", description: "Roadmap, UX, research" },
+  { id: "Engineering", label: "Engineering Office",  head: "FORGE",  icon: "⬡", description: "Frontend, backend, mobile, AI, infra" },
+  { id: "QA",          label: "QA Office",           head: "SHIELD", icon: "◎", description: "Testing, regression, quality gates" },
+  { id: "Security",    label: "Security Office",     head: "VAULT",  icon: "⬟", description: "Audits, compliance, vulnerability scanning" },
+  { id: "Release",     label: "Release Office",      head: "DELTA",  icon: "▲", description: "Launch, App Store, Play Store" },
+  { id: "Portfolio",   label: "Portfolio Office",    head: "SIGMA",  icon: "◆", description: "Investment signals, health scoring" },
+  { id: "Content",     label: "Content Office",      head: "INK",    icon: "◐", description: "Docs, copy, presentations, knowledge" },
 ];
 
 export const DEFAULT_PROJECTS: Project[] = [
