@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import AppShell from "../components/AppShell";
 import { useToast } from "../components/Toast";
 
@@ -91,7 +92,7 @@ export default function ProjectsPage() {
               <div key={p.id} className="mo-card card-hover" style={{ padding: 18 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div className="t-headline" style={{ color: "var(--text-primary)" }}>{p.name}</div>
+                    <Link href={`/issues?project=${p.id}`} className="t-headline" style={{ color: "var(--text-primary)", textDecoration: "none" }}>{p.name}</Link>
                     {p.liveUrl && <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className="t-caption" style={{ color: "var(--accent-green)", textDecoration: "none" }}>↗ Live</a>}
                   </div>
                   <button onClick={() => cycleStatus(p)} className="mo-signal" style={{ cursor: "pointer", color: STATUS_COLOR[p.status], background: "var(--bg-hover)", border: "none" }}>{p.status}</button>
@@ -104,11 +105,11 @@ export default function ProjectsPage() {
                 {open.length > 0 && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     {open.slice(0, 4).map((i) => (
-                      <div key={i.id} style={{ display: "flex", gap: 8, alignItems: "center", padding: "5px 8px", borderRadius: 8, background: "var(--bg-hover)" }}>
+                      <Link key={i.id} href="/issues" style={{ display: "flex", gap: 8, alignItems: "center", padding: "5px 8px", borderRadius: 8, background: "var(--bg-hover)", textDecoration: "none" }}>
                         <span className="t-caption" style={{ color: PRIORITY_COLOR[i.priority] }}>●</span>
                         <span className="mo-issue-key">{i.key}</span>
                         <span className="t-footnote" style={{ color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.title}</span>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}

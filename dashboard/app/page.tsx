@@ -107,31 +107,39 @@ function MetricCard({
   value,
   accentColor,
   sub,
+  href,
 }: {
   label: string;
   value: number | string;
   accentColor: string;
   sub?: string;
+  href?: string;
 }) {
-  return (
-    <div className="mo-card card-hover" style={{ overflow: "hidden" }}>
-      <div style={{ padding: "18px 20px" }}>
-        <div
-          className="font-heading count-animate"
-          style={{ fontSize: 32, color: accentColor, lineHeight: 1, marginBottom: 8 }}
-          suppressHydrationWarning
-        >
-          {value}
-        </div>
-        <div className="mo-section-label">{label}</div>
-        {sub && (
-          <div style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "4px" }}>
-            {sub}
-          </div>
-        )}
+  const inner = (
+    <div style={{ padding: "18px 20px" }}>
+      <div
+        className="font-heading count-animate"
+        style={{ fontSize: 32, color: accentColor, lineHeight: 1, marginBottom: 8 }}
+        suppressHydrationWarning
+      >
+        {value}
       </div>
+      <div className="mo-section-label">{label}</div>
+      {sub && (
+        <div style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "4px" }}>
+          {sub}
+        </div>
+      )}
     </div>
   );
+  if (href) {
+    return (
+      <Link href={href} className="mo-card card-hover" style={{ overflow: "hidden", display: "block", textDecoration: "none" }}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className="mo-card card-hover" style={{ overflow: "hidden" }}>{inner}</div>;
 }
 
 /* ── Agent mini-card ───────────────────────────────────────── */
@@ -390,10 +398,10 @@ export default function CommandCenter() {
 
         {/* Metrics row */}
         <div className="mo-metrics" style={{ flexShrink: 0 }}>
-          <MetricCard label="Active Projects"   value={metrics.activeProjects}   accentColor="var(--accent-cyan)"  sub={`of ${metrics.totalProjects} total`} />
-          <MetricCard label="Open Bugs"         value={metrics.openBugs}         accentColor="var(--accent-amber)" sub="across portfolio" />
-          <MetricCard label="Pending Approvals" value={metrics.pendingApprovals} accentColor={metrics.pendingApprovals > 0 ? "var(--accent-red)" : "var(--accent-green)"} sub={metrics.pendingApprovals > 0 ? "action required" : "queue clear"} />
-          <MetricCard label="Active Agents"     value={metrics.activeAgents}     accentColor="var(--accent-green)" sub={`${AGENTS.length - metrics.activeAgents} standby/idle`} />
+          <MetricCard label="Active Projects"   value={metrics.activeProjects}   accentColor="var(--accent-cyan)"  sub={`of ${metrics.totalProjects} total`} href="/projects" />
+          <MetricCard label="Open Bugs"         value={metrics.openBugs}         accentColor="var(--accent-amber)" sub="across portfolio" href="/issues" />
+          <MetricCard label="Pending Approvals" value={metrics.pendingApprovals} accentColor={metrics.pendingApprovals > 0 ? "var(--accent-red)" : "var(--accent-green)"} sub={metrics.pendingApprovals > 0 ? "action required" : "queue clear"} href="/approvals" />
+          <MetricCard label="Active Agents"     value={metrics.activeAgents}     accentColor="var(--accent-green)" sub={`${AGENTS.length - metrics.activeAgents} standby/idle`} href="/agents" />
         </div>
 
         {/* Quick actions */}

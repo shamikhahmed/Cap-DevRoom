@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import AppShell from "../components/AppShell";
 import {
   APEX_RECOMMENDATION,
@@ -237,18 +238,21 @@ export default function BriefingPage() {
         {/* Stats row */}
         <div className="mo-stat-row" style={{ marginBottom: "24px" }}>
           {[
-            { label: "Active Projects",   value: stats.active,    color: "var(--accent-cyan)"  },
-            { label: "Open Bugs",         value: stats.bugs,      color: "var(--accent-amber)" },
-            { label: "Pending Approvals", value: stats.approvals, color: stats.approvals > 0 ? "var(--accent-red)" : "var(--accent-green)" },
+            { label: "Active Projects",   value: stats.active,    color: "var(--accent-cyan)",   href: "/projects"  },
+            { label: "Open Bugs",         value: stats.bugs,      color: "var(--accent-amber)",  href: "/issues"    },
+            { label: "Pending Approvals", value: stats.approvals, color: stats.approvals > 0 ? "var(--accent-red)" : "var(--accent-green)", href: "/approvals" },
           ].map((s) => (
-            <div
+            <Link
               key={s.label}
+              href={s.href}
               className="card-hover"
               style={{
                 backgroundColor: "var(--bg-card)",
                 border: "1px solid var(--border)",
                 borderRadius: "4px",
                 overflow: "hidden",
+                textDecoration: "none",
+                display: "block",
               }}
             >
               <div style={{ height: "1px", backgroundColor: s.color }} />
@@ -263,7 +267,7 @@ export default function BriefingPage() {
                   {s.label}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
