@@ -2,6 +2,64 @@
 
 All notable changes to **Cap · DevRoom** are documented here.
 
+## [3.4.0] — 2026-06-22 — Model routing, Play Store checks, Release packages UI
+
+### Agent model routing
+- `DevroomAgentDef` gains `defaultModel?: "opus" | "sonnet" | "haiku"` — all 22 agents tagged.
+- `resolveModelId()` in `lib/devroom/agents.ts` maps haiku → `cursor-fast`, opus/sonnet → `composer-2`.
+- Worker (`lib/devroom/worker.ts`) now passes per-agent model ID to Cursor SDK on every job execution. Routine monitoring agents (SCROLL, INK, SIGMA) use `cursor-fast`; strategy agents (APEX, FORGE, VAULT, PITCH) use `composer-2`.
+
+### Play Store readiness
+- 4 new AppStore checks in `lib/devroom/readiness.ts` (27 total): Android bundle, release keystore, fastlane/supply metadata, `google-services.json`.
+- All scanned against sandbox filesystem same as existing iOS/AppStore checks.
+
+### Release packages UI (`/release`)
+- New page powered by existing `GET /api/release` — shows GO / CONDITIONAL GO / NO GO per active project.
+- Expandable package cards: 6-point check breakdown (pass/warn/fail), completed work, risks, missing items, approval requirement flag.
+- Summary pills, refresh button, DELTA attribution.
+- `/release` added to sidebar nav and CommandPalette (17 commands total).
+
+## [3.3.0] — 2026-06-22 — Autonomous CTO Office: Full Evolution
+
+### Department system (8 offices)
+- `DEPARTMENTS` export in `app/lib/data.ts` — Executive, Product, Engineering, QA, Security, Release, Portfolio, Content.
+- `/departments` page — filterable office view, agent grid per dept, model tier badges (opus/sonnet/haiku), live active-job indicators, "Brief office" button.
+- All agents tagged with `department` and `defaultModel` in `data.ts`.
+
+### 10 new specialist agents (23 total)
+NOVA (Mobile), ECHO (AI/ML), ATLAS (Infrastructure), RADAR (Bug Hunter), CIPHER (Compliance), DELTA (Release Manager), NEXUS (App Store Manager), SIGMA (Portfolio Analyst) — all with full system prompts, skills, and trigger keywords in `lib/devroom/agents.ts`.
+
+### Security Office
+- `lib/devroom/security.ts` — static analysis against all sandboxes: secrets detection (8 regex patterns for API keys/JWTs/AWS/Cursor/GitHub/private keys/DB strings), code patterns (eval/innerHTML XSS), dep audit (risky versions, lockfile, bloat), privacy compliance.
+- Score 0–100, Grade A–F. Persists findings to `ReadinessCheck` table.
+- `GET/POST /api/security` with rate limiting.
+- `/security` page — grade rings per app, per-finding drilldown, re-scan action, "What VAULT scans" legend.
+- Security badge in sidebar nav (red when criticals exist).
+
+### Release Management Office
+- `lib/devroom/release.ts` — `generateReleasePackage(projectId)` produces structured GO/CONDITIONAL_GO/NO_GO decision from 6 checks: readiness score, critical blockers, open bugs, QA validation, pending approvals, budget status.
+- `GET /api/release` — single project or all active projects.
+
+### CEO Dashboard v2
+- **Critical alerts strip** (`CriticalAlerts` component) — security criticals, pending approvals, launch blockers surfaced above the fold; dismissable per alert.
+- **Department chips** — 8 office status dots on home page showing active job count.
+- **6 quick actions** updated to cover all major offices.
+
+### Live metrics fixed
+- Nav badge bugs always showed 0 — fixed: now fetches from `/api/health` (DB count) same as approvals.
+- Home page `openBugs` now uses live DB count via health endpoint, not localStorage defaults.
+- Sidebar Cursor API status now dynamic (was hardcoded "connected").
+
+### Settings token UX
+- `/api/settings/token` — localhost-only endpoint returning `DEVROOM_API_TOKEN`.
+- Settings page shows masked token with Show/Copy — paste directly into iPhone app without SSH.
+
+### Scheduled crews seeding
+- `listScheduled()` now auto-seeds 4 default crews on first call (Weekly QA Sweep, Daily Readiness Scan, Weekly Debt Audit, Weekly Executive Briefing).
+
+### CommandPalette expanded (16 commands)
+Added: nav-departments, nav-security, act-security (security audit run).
+
 ## [3.2.0] — 2026-06-21 — Autonomous CTO Office
 
 ### Autonomous office
