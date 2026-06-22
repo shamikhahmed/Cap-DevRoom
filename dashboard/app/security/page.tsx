@@ -50,7 +50,7 @@ function GradeRing({ grade, score }: { grade: string; score: number }) {
   );
 }
 
-export default function SecurityPage() {
+function SecurityPageInner() {
   const { toast } = useToast();
   const [portfolio, setPortfolio] = useState<PortfolioSecurity | null>(null);
   const [report, setReport] = useState<SecurityReport | null>(null);
@@ -109,7 +109,7 @@ export default function SecurityPage() {
   }
 
   return (
-    <AppShell>
+    <>
       <div className="mo-page" style={{ maxWidth: 980 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
           <div>
@@ -197,6 +197,10 @@ export default function SecurityPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </>
   );
+}
+
+export default function SecurityPage() {
+  return <AppShell><SecurityPageInner /></AppShell>;
 }

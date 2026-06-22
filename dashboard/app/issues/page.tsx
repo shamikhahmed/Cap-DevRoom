@@ -26,7 +26,7 @@ const PRIORITY_COLOR: Record<string, string> = {
   urgent: "var(--accent-red)", high: "var(--accent-amber)", medium: "var(--text-secondary)", low: "var(--text-muted)", none: "var(--text-muted)",
 };
 
-export default function IssuesPage() {
+function IssuesPageInner() {
   const { toast } = useToast();
   const [issues, setIssues] = useState<Issue[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
@@ -67,7 +67,7 @@ export default function IssuesPage() {
   };
 
   return (
-    <AppShell>
+    <>
       <div className="mo-page" style={{ maxWidth: 980 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, gap: 12, flexWrap: "wrap" }}>
           <div>
@@ -110,8 +110,12 @@ export default function IssuesPage() {
           ))}
         </div>
       </div>
-    </AppShell>
+    </>
   );
+}
+
+export default function IssuesPage() {
+  return <AppShell><IssuesPageInner /></AppShell>;
 }
 
 function NewIssue({ projects, onCreated }: { projects: { id: string; name: string }[]; onCreated: () => void }) {

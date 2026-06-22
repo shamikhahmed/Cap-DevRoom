@@ -54,7 +54,7 @@ function ringColor(score: number): string {
   return "var(--accent-red)";
 }
 
-export default function LaunchPage() {
+function LaunchPageInner() {
   const { toast } = useToast();
   const [scores, setScores] = useState<ScoreRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +148,7 @@ export default function LaunchPage() {
   const avgReadiness = scores.length ? Math.round(scores.reduce((a, s) => a + s.readiness, 0) / scores.length) : 0;
 
   return (
-    <AppShell>
+    <>
       <div className="mo-page" style={{ maxWidth: 1080 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
           <div>
@@ -252,8 +252,12 @@ export default function LaunchPage() {
 
         <SchedulesPanel />
       </div>
-    </AppShell>
+    </>
   );
+}
+
+export default function LaunchPage() {
+  return <AppShell><LaunchPageInner /></AppShell>;
 }
 
 function Stat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {

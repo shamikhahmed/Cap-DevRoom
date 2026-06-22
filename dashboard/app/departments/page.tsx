@@ -24,7 +24,7 @@ const MODEL_BADGE: Record<string, string> = {
   haiku: "var(--accent-green)",
 };
 
-export default function DepartmentsPage() {
+function DepartmentsPageInner() {
   const { toast } = useToast();
   const [activeJobs, setActiveJobs] = useState<Record<string, AgentJob>>({});
   const [selectedDept, setSelectedDept] = useState<Department | "all">("all");
@@ -62,7 +62,7 @@ export default function DepartmentsPage() {
   const totalActive = Object.keys(activeJobs).length;
 
   return (
-    <AppShell>
+    <>
       <div className="mo-page" style={{ maxWidth: 1100 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
           <div>
@@ -182,6 +182,10 @@ export default function DepartmentsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
+    </>
   );
+}
+
+export default function DepartmentsPage() {
+  return <AppShell><DepartmentsPageInner /></AppShell>;
 }
