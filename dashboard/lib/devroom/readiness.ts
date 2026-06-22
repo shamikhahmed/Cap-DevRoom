@@ -89,6 +89,14 @@ export const CHECK_DEFS: CheckDef[] = [
       c.existsAny(["capacitor.config.json", "capacitor.config.ts", "ios", "android", "app.json", "eas.json"]) ? pass() : warn("PWA only — needs wrapper for store") },
   { id: "appstore.screenshots", category: "AppStore", label: "Store screenshots", weight: 1, evaluate: (c) =>
       c.existsAny(["screenshots", "docs/screenshots", "store-assets", "public/screenshots", "fastlane"]) ? pass() : warn("No store screenshots") },
+  { id: "playstore.bundle", category: "AppStore", label: "Play Store: Android bundle", weight: 2, evaluate: (c) =>
+      c.existsAny(["android", "app/build.gradle", "build.gradle"]) ? pass() : warn("No Android project — Play Store not configured") },
+  { id: "playstore.keystore", category: "AppStore", label: "Play Store: Release keystore", weight: 2, evaluate: (c) =>
+      c.existsAny(["android/app/keystore.jks", "android/release.keystore", "keystore.jks", "release.keystore"]) ? pass() : warn("No release keystore — needed for Play Store upload") },
+  { id: "playstore.metadata", category: "AppStore", label: "Play Store: Metadata (fastlane/supply)", weight: 1, evaluate: (c) =>
+      c.existsAny(["fastlane/metadata/android", "fastlane/Supplyfile", "store_listings"]) ? pass() : warn("No Play Store metadata configured") },
+  { id: "playstore.google_services", category: "AppStore", label: "Play Store: google-services.json", weight: 1, evaluate: (c) =>
+      c.existsAny(["android/app/google-services.json", "google-services.json"]) ? pass() : warn("No google-services.json — required for Firebase/push") },
 
   // ── Launch ─────────────────────────────────────────────────
   { id: "launch.privacy", category: "Launch", label: "Privacy policy", weight: 2, evaluate: (c) =>

@@ -44,6 +44,7 @@ export default function CommandPalette() {
       { id: "nav-launch",      group: "Go to",  label: "Launch Control",         hint: "Ship board",             run: go("/launch") },
       { id: "nav-departments", group: "Go to",  label: "Departments",            hint: "All offices",            run: go("/departments") },
       { id: "nav-security",    group: "Go to",  label: "Security Audit",         hint: "VAULT office",           run: go("/security") },
+      { id: "nav-release",     group: "Go to",  label: "Release Packages",       hint: "GO / NO GO per app",     run: go("/release") },
       { id: "nav-issues",      group: "Go to",  label: "Issues",                 hint: "Issue tracker",          run: go("/issues") },
       { id: "nav-projects",    group: "Go to",  label: "Projects",               run: go("/projects") },
       { id: "nav-agents",      group: "Go to",  label: "Agents",                 run: go("/agents") },

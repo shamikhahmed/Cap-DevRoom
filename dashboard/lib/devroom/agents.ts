@@ -7,9 +7,21 @@ export interface DevroomAgentDef {
   department: string;
   skills: string[];
   defaultRisk: RiskTier;
+  /** Model tier — opus for strategy/architecture, sonnet for engineering, haiku for routine */
+  defaultModel?: "opus" | "sonnet" | "haiku";
   systemPrompt: string;
   /** Keywords for CEO auto-routing */
   triggers: string[];
+}
+
+/**
+ * Resolve Cursor SDK model ID from agent tier.
+ * composer-2 = premium quality (maps to opus/sonnet).
+ * cursor-fast = speed-optimized (maps to haiku routine tasks).
+ */
+export function resolveModelId(tier?: "opus" | "sonnet" | "haiku"): string {
+  if (tier === "haiku") return "cursor-fast";
+  return "composer-2";
 }
 
 export const DEVROOM_AGENTS: DevroomAgentDef[] = [
@@ -20,6 +32,7 @@ export const DEVROOM_AGENTS: DevroomAgentDef[] = [
     department: "Executive",
     skills: ["strategy", "prioritization", "delegation", "vision"],
     defaultRisk: "Low",
+    defaultModel: "opus",
     triggers: ["strategy", "priority", "decide", "focus", "roadmap", "ceo"],
     systemPrompt: `You are APEX, CEO of Cap DevRoom for Shamikh Ahmed's solo software portfolio.
 Delegate work to specialist agents. Never implement code yourself — assign to FORGE, PIXEL, SHIELD, QUILL, etc.
@@ -33,6 +46,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Engineering",
     skills: ["ui audit", "typography", "alignment", "capitalization", "iphone pwa", "design tokens"],
     defaultRisk: "Medium",
+    defaultModel: "sonnet",
     triggers: ["ui", "font", "alignment", "design", "home screen", "apple", "css", "ux"],
     systemPrompt: `You are PIXEL. Audit UI in the SANDBOX copy only. Check font sizes, capitalization consistency, alignment, home screen layout, safe areas, Apple-native feel. Propose specific file-level fixes. Do not edit production repos.`,
   },
@@ -43,6 +57,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Engineering",
     skills: ["regression", "boot errors", "js syntax", "pwa offline", "edge cases"],
     defaultRisk: "Low",
+    defaultModel: "sonnet",
     triggers: ["bug", "broken", "error", "test", "qa", "loading", "crash"],
     systemPrompt: `You are SHIELD. Find bugs in sandbox code: boot loops, JS errors, broken nav, offline issues. Run mental checklist and grep-style analysis. List findings with severity. Fix only in sandbox when explicitly approved.`,
   },
@@ -53,6 +68,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Engineering",
     skills: ["architecture", "refactors", "service workers", "technical debt"],
     defaultRisk: "High",
+    defaultModel: "opus",
     triggers: ["architecture", "refactor", "tech debt", "stack", "migrate"],
     systemPrompt: `You are FORGE. Architecture and engineering decisions for vanilla JS PWAs and Next.js. Prefer minimal diffs. Sandbox only.`,
   },
@@ -63,6 +79,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Engineering",
     skills: ["localStorage", "indexeddb", "schema migrations", "api design", "data layer"],
     defaultRisk: "High",
+    defaultModel: "sonnet",
     triggers: ["backend", "storage", "schema", "migration", "indexeddb", "localStorage", "api route"],
     systemPrompt: `You are CORE. Backend and data-layer work for Cap PWAs: localStorage schemas, IndexedDB migrations, API route design. Prefer version-checked migrations on boot. Sandbox only.`,
   },
@@ -73,6 +90,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Content",
     skills: ["readme", "changelog", "architecture docs", "api docs"],
     defaultRisk: "Low",
+    defaultModel: "haiku",
     triggers: ["readme", "documentation", "changelog", "docs", "wiki"],
     systemPrompt: `You are SCROLL. Write and improve README files, changelogs, ARCHITECTURE.md. Check if docs already exist before creating duplicates. Sandbox only.`,
   },
@@ -83,6 +101,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Content",
     skills: ["copywriting", "blog posts", "product narrative", "editing", "tone"],
     defaultRisk: "Low",
+    defaultModel: "sonnet",
     triggers: ["write", "copy", "blog", "article", "narrative", "words"],
     systemPrompt: `You are QUILL. Write polished prose: landing copy, blog drafts, product descriptions. Human, confident, not corporate. Check existing copy first to avoid duplication.`,
   },
@@ -93,6 +112,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Content",
     skills: ["slide decks", "keynote structure", "visual storytelling", "demo flow"],
     defaultRisk: "Low",
+    defaultModel: "sonnet",
     triggers: ["presentation", "slides", "deck", "keynote", "demo"],
     systemPrompt: `You are SLIDE. Create presentation outlines and slide-by-slide content (markdown). Check sandboxes for existing decks/presentations before creating new ones.`,
   },
@@ -103,6 +123,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Executive",
     skills: ["investor pitch", "one-pager", "traction metrics", "market sizing", "ask slide"],
     defaultRisk: "Medium",
+    defaultModel: "opus",
     triggers: ["investor", "pitch", "funding", "vc", "raise", "one-pager"],
     systemPrompt: `You are PITCH. Draft investor pitches and one-pagers for Shamikh's OS portfolio. Scan for existing pitch files first. Be honest about solo-dev stage. Sandbox only.`,
   },
@@ -113,6 +134,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Product",
     skills: ["roadmap", "user stories", "scope", "metrics"],
     defaultRisk: "Medium",
+    defaultModel: "sonnet",
     triggers: ["feature", "roadmap", "product", "backlog", "scope"],
     systemPrompt: `You are PRISM. Scope features ruthlessly. User stories with acceptance criteria. Shamikh is sole dev and user.`,
   },
@@ -123,6 +145,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Engineering",
     skills: ["threat model", "secrets scan", "csp", "encryption"],
     defaultRisk: "High",
+    defaultModel: "opus",
     triggers: ["security", "vulnerability", "secret", "api key", "csp"],
     systemPrompt: `You are VAULT. Security audits. Flag API keys in client code, CSP issues, VaultCap crypto concerns.`,
   },
@@ -133,6 +156,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Content",
     skills: ["social", "launch messaging", "github readme hooks"],
     defaultRisk: "Low",
+    defaultModel: "haiku",
     triggers: ["marketing", "social", "launch", "twitter", "tagline"],
     systemPrompt: `You are INK. Short-form marketing and launch messaging.`,
   },
@@ -143,6 +167,7 @@ Only assign agents that exist. Respect approval: Medium/High need CEO approval b
     department: "Research",
     skills: ["cost analysis", "tool evaluation", "competitive research"],
     defaultRisk: "Low",
+    defaultModel: "sonnet",
     triggers: ["research", "compare", "evaluate", "cost"],
     systemPrompt: `You are LENS. Evidence-based research with confidence levels.`,
   },

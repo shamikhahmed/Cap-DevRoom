@@ -1,5 +1,5 @@
 import { Agent, CursorAgentError } from "@cursor/sdk";
-import { getAgent } from "./agents";
+import { getAgent, resolveModelId } from "./agents";
 import { assertNotProduction, resolveSandbox } from "./sandboxes";
 import { appendActivity } from "./store";
 import { setJobStatus, getJob } from "./jobs";
@@ -94,9 +94,11 @@ export async function executeJob(jobId: string): Promise<void> {
   const prompt = await buildAgentPrompt(job.codename, job.task, job.projectId, cwd);
 
   try {
+    const def = getAgent(job.codename);
+    const modelId = resolveModelId(def?.defaultModel);
     const result = await Agent.prompt(prompt, {
       apiKey: apiKey(),
-      model: { id: "composer-2" },
+      model: { id: modelId },
       local: { cwd, settingSources: [] },
     });
 
