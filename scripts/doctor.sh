@@ -29,6 +29,7 @@ check() {
 check "Root package.json" "test -f package.json"
 check "Turbo config" "test -f turbo.json"
 check "Dashboard app" "test -d dashboard"
+check "Env template" "test -f dashboard/.env.example"
 check "Shared package source" "test -f packages/shared/src/index.ts"
 check "Shared dist" "test -f packages/shared/dist/index.js"
 check "Env: dashboard/.env.local or .env" "test -f dashboard/.env.local || test -f dashboard/.env"
