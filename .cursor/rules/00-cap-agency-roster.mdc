@@ -1,0 +1,51 @@
+---
+description: Cap DevRoom agency agent roster — how to invoke the 131 installed Agency specialists
+alwaysApply: false
+---
+
+# Cap · DevRoom — Agency Agent Roster
+
+131 agents from [agency-agents](https://github.com/msitarzewski/agency-agents) are installed in `.cursor/rules/`.
+
+## Invoke
+
+Reference any agent with `@<slug>` in chat, e.g.:
+
+- `@engineering-mobile-app-builder` — iOS/Android/Capacitor work
+- `@engineering-frontend-developer` — web UI implementation
+- `@design-brand-guardian` — naming, brand, categorization
+- `@design-image-prompt-engineer` — app icons & visual assets
+- `@marketing-content-strategist` — copy & campaigns
+- `@paid-media-ppc-strategist` — paid campaigns
+- `@testing-qa-engineer` — structured QA passes
+- `@engineering-code-reviewer` — PR / diff review
+- `@engineering-minimal-change-engineer` — surgical fixes only
+
+## Divisions installed
+
+| Division | Count | Use for |
+|----------|------:|---------|
+| engineering | 34 | Web, mobile, backend, SRE, code review |
+| design | 9 | UI, UX, branding, icons, visual storytelling |
+| marketing | 36 | Content, SEO, launch, social, community |
+| product | 5 | PRDs, roadmaps, naming, categorization |
+| testing | 8 | QA, accessibility, performance testing |
+| security | 10 | Threat modeling, audits, compliance |
+| paid-media | 7 | PPC, tracking, ad creative, programmatic |
+| sales | 9 | Outreach, discovery, proposals |
+| project-management | 7 | Sprints, retros, stakeholder comms |
+| support | 6 | Docs, tickets, customer success |
+
+## Cap portfolio QA agents (capricorn-tooling)
+
+For app-specific smoke/QA, also see `~/Desktop/Projects/capricorn-tooling/cap-agents/skills/`:
+
+- `agent-14-deeponycap-qa`
+- `agent-10-vaultcap-qa`
+- LedgerCap QA in cap-agents roster
+
+## Rules
+
+- Keep `alwaysApply: false` on agency agents — invoke on demand.
+- Cap DevRoom native agents live in `agents/` (APEX, FORGE, SHIELD, etc.).
+- Do not bulk-enable all 131 rules; pick the specialist for the task.
