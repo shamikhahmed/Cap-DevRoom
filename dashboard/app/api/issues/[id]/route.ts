@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteIssue, getIssue, updateIssue } from "../../../../lib/devroom/issues";
+import { onIssueCompleted } from "../../../../lib/devroom/issue-from-job";
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
@@ -13,6 +14,9 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const body = await req.json();
   try {
     const issue = await updateIssue(id, body);
+    if (body.status === "done") {
+      await onIssueCompleted(id);
+    }
     return NextResponse.json({ issue });
   } catch {
     return NextResponse.json({ error: "not found" }, { status: 404 });

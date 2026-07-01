@@ -252,6 +252,52 @@ export default function CommandCenter() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [agentStatuses, setAgentStatuses] = useState<Record<string, AgentStatus>>({});
   const [activeJobs, setActiveJobs] = useState<Record<string, AgentJob>>({});
+  const [healthMeta, setHealthMeta] = useState<{
+    lastActivityAt: string | null;
+    sandboxStale: boolean;
+    daysSinceSync: number | null;
+    unpromotedTotal: number;
+  }>({ lastActivityAt: null, sandboxStale: false, daysSinceSync: null, unpromotedTotal: 0 });
+  const [scanBusy, setScanBusy] = useState(false);
+
+  const hasLiveActivity =
+    logs.length > 0 || Object.values(activeJobs).some((j) => j.status === "PROCESSING");
+
+  function loadActivity() {
+    fetch("/api/activity")
+      .then((r) => r.json())
+      .then((data: { log?: Array<{ id: string; time: string; agent: string; action: string; type: LogType }> }) => {
+        const serverLog = data.log ?? [];
+        if (serverLog.length === 0) {
+          setLogs([]);
+          return;
+        }
+        setLogs(
+          serverLog.slice(0, 80).map((entry) => ({
+            id: entry.id,
+            agent: entry.agent,
+            action: entry.action,
+            type: entry.type,
+            time: formatLogTime(entry.time),
+          }))
+        );
+      })
+      .catch(() => setLogs([]));
+  }
+
+  async function runReadinessScan() {
+    setScanBusy(true);
+    try {
+      await fetch("/api/readiness", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "scanAll" }),
+      });
+      loadActivity();
+    } finally {
+      setScanBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -289,6 +335,12 @@ export default function CommandCenter() {
           pendingApprovals: h.pendingApprovals ?? m.pendingApprovals,
           activeAgents: m.activeAgents,
         });
+        setHealthMeta({
+          lastActivityAt: h.lastActivityAt ?? null,
+          sandboxStale: h.sandboxSync?.stale ?? false,
+          daysSinceSync: h.sandboxSync?.daysSinceSync ?? null,
+          unpromotedTotal: h.unpromotedTotal ?? 0,
+        });
       } catch {
         if (!cancelled) {
           setMetrics({
@@ -303,28 +355,6 @@ export default function CommandCenter() {
     }
 
     void load();
-
-    const loadActivity = () => {
-      fetch("/api/activity")
-        .then((r) => r.json())
-        .then((data: { log?: Array<{ id: string; time: string; agent: string; action: string; type: LogType }> }) => {
-          const serverLog = data.log ?? [];
-          if (serverLog.length === 0) {
-            setLogs([]);
-            return;
-          }
-          setLogs(
-            serverLog.slice(0, 80).map((entry) => ({
-              id: entry.id,
-              agent: entry.agent,
-              action: entry.action,
-              type: entry.type,
-              time: formatLogTime(entry.time),
-            }))
-          );
-        })
-        .catch(() => setLogs([]));
-    };
 
     loadActivity();
     const interval = setInterval(loadActivity, 15_000);
@@ -507,8 +537,18 @@ export default function CommandCenter() {
                 flexShrink: 0,
               }}
             >
-              <span className="status-pulse" style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent-green)" }} />
-              <span className="mo-section-label" style={{ color: "var(--text-secondary)" }}>Activity</span>
+              <span
+                className={hasLiveActivity ? "status-pulse" : undefined}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  backgroundColor: hasLiveActivity ? "var(--accent-green)" : "var(--text-muted)",
+                }}
+              />
+              <span className="mo-section-label" style={{ color: "var(--text-secondary)" }}>
+                Activity{hasLiveActivity ? "" : " · idle"}
+              </span>
             </div>
 
             {/* Log entries */}
@@ -521,7 +561,23 @@ export default function CommandCenter() {
             >
               {logs.length === 0 ? (
                 <div style={{ padding: "24px 16px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
-                  No activity yet. Run an agent or approve a task to see live events.
+                  <div style={{ marginBottom: 12 }}>No activity yet.</div>
+                  {healthMeta.sandboxStale && (
+                    <div style={{ marginBottom: 8, color: "var(--accent-amber)" }}>
+                      Sandboxes stale{healthMeta.daysSinceSync != null ? ` (${healthMeta.daysSinceSync}d)` : ""} — run npm run sync:sandboxes
+                    </div>
+                  )}
+                  {healthMeta.unpromotedTotal > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      {healthMeta.unpromotedTotal} un-promoted sandbox file(s) — <Link href="/promote" style={{ color: "var(--accent-cyan)" }}>review</Link>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
+                    <button type="button" className="mo-btn" disabled={scanBusy} onClick={() => void runReadinessScan()}>
+                      {scanBusy ? "Scanning…" : "Scan readiness"}
+                    </button>
+                    <Link href="/approvals" className="mo-btn" style={{ textDecoration: "none" }}>Approvals</Link>
+                  </div>
                 </div>
               ) : (
                 logs.map((entry) => (

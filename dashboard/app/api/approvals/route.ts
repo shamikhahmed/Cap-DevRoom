@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { listServerApprovals, updateApproval } from "../../../lib/devroom/store";
 import { runAgentAfterApproval } from "../../../lib/devroom/orchestrator";
+import { runCloudAgent } from "../../../lib/devroom/cloud";
 import { audit } from "../../../lib/devroom/audit";
+
+function isCloudApproval(updated: { task?: string; title: string }): boolean {
+  const t = updated.task || updated.title;
+  return t.includes("[Cloud]") || t.toLowerCase().includes("cloud pr");
+}
 
 export async function GET() {
   const approvals = await listServerApprovals();
@@ -35,6 +41,19 @@ export async function PATCH(req: Request) {
       const task = updated.task || updated.description;
       if (task) {
         try {
+          if (isCloudApproval(updated)) {
+            const cloud = await runCloudAgent({
+              codename: updated.agent,
+              task: task.replace(/^\[Cloud\]\s*/i, ""),
+              projectId: updated.projectId,
+              createPR: true,
+            });
+            return NextResponse.json({
+              approval: updated,
+              run: { ...cloud, status: cloud.ok ? "cloud_queued" : "error" },
+            });
+          }
+
           const runResult = await runAgentAfterApproval({
             codename: updated.agent,
             task,

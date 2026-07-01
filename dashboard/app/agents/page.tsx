@@ -14,24 +14,6 @@ import {
   type RosterAgent,
 } from "../components/AgentProfileCard";
 
-/* ── Current tasks per agent ───────────────────────────────── */
-
-const AGENT_TASKS: Record<string, string> = {
-  APEX:   "Portfolio ops: 8 Cap apps investor-ready — route design pass to PIXEL",
-  FORGE:  "Verify ScentCap + AuraCap SPA deep links on GitHub Pages",
-  PRISM:  "Backlog: hub mobile polish + per-app frontend-design waves",
-  PIXEL:  "frontend-design skill: distinct visual pass per Cap app + hub",
-  CORE:   "Cap DevRoom: wire CEO command → sandbox agent runs",
-  SHIELD: "Playwright: PulseCap onboarding + ScentCap demo mode",
-  VAULT:  "VaultCap PIN lockout storage review — severity HIGH",
-  LENS:   "Compare Cap-Markroom vs Cap DevRoom for unified agent org",
-  SCROLL: "Update portfolio context in docs/portfolio-context/ for all 8 Caps",
-  INK:    "Hub copy: eight apps, Device Sovereignty narrative",
-  QUILL:  "README polish across Cap repos",
-  SLIDE:  "Presentation decks: verify all 8 apps have presentation.html",
-  PITCH:  "Investor one-pager: Capricorn Systems eight-app portfolio",
-};
-
 /* ── Accent colors ─────────────────────────────────────────── */
 
 const AGENT_ACCENT: Record<string, string> = {
@@ -491,10 +473,12 @@ function ActivatePanel({
 function AgentCard({
   agent,
   liveStatus,
+  currentTask,
   onActivate,
 }: {
   agent: Agent;
   liveStatus?: AgentStatus;
+  currentTask?: string;
   onActivate: (a: Agent) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -576,7 +560,7 @@ function AgentCard({
             Current Task
           </div>
           <div style={{ fontSize: "10px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-            {AGENT_TASKS[agent.codename] ?? "No active task assigned"}
+            {currentTask ?? "Standing by — assign from CEO command or /issues"}
           </div>
         </div>
       </button>
@@ -695,6 +679,7 @@ export default function AgentsPage() {
   const [rosterLoading, setRosterLoading] = useState(true);
   const [showLegacy, setShowLegacy] = useState(false);
   const [liveStatuses, setLiveStatuses] = useState<Record<string, AgentStatus>>({});
+  const [agentTasks, setAgentTasks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetch("/api/agents/roster")
@@ -703,10 +688,19 @@ export default function AgentsPage() {
       .catch(() => setRoster([]))
       .finally(() => setRosterLoading(false));
 
-    fetch("/api/agents/status")
-      .then((r) => r.json())
-      .then((d: { statuses?: Record<string, AgentStatus> }) => setLiveStatuses(d.statuses ?? {}))
-      .catch(() => {});
+    const loadStatus = () => {
+      fetch("/api/agents/status")
+        .then((r) => r.json())
+        .then((d: { statuses?: Record<string, AgentStatus> }) => setLiveStatuses(d.statuses ?? {}))
+        .catch(() => {});
+      fetch("/api/agents/tasks")
+        .then((r) => r.json())
+        .then((d: { tasks?: Record<string, string> }) => setAgentTasks(d.tasks ?? {}))
+        .catch(() => {});
+    };
+    loadStatus();
+    const t = setInterval(loadStatus, 30_000);
+    return () => clearInterval(t);
   }, []);
 
   const filtered = filter === "all" ? AGENTS : AGENTS.filter((a) => a.status === filter);
@@ -843,6 +837,7 @@ export default function AgentsPage() {
                     key={agent.codename}
                     agent={agent}
                     liveStatus={liveStatuses[agent.codename]}
+                    currentTask={agentTasks[agent.codename]}
                     onActivate={setActiveAgent}
                   />
                 ))}

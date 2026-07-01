@@ -33,6 +33,15 @@ if [[ -f packages/database/.env ]] || [[ -n "${DATABASE_URL:-}" ]] || [[ -f dash
   npm run db:push --silent 2>/dev/null || echo -e "${YELLOW}  (db:push skipped — run npm run db:push manually)${NC}"
 fi
 
+if [[ -d sandboxes/VaultCap ]]; then
+  echo -e "${GREEN}✓ Sandboxes present${NC}"
+else
+  echo -e "${YELLOW}! Run npm run sync:sandboxes to pull portfolio apps${NC}"
+fi
+
+echo -e "${YELLOW}Tip:${NC} Set DEVROOM_HEARTBEAT=1 in dashboard/.env.local to auto-run scheduled crews in dev"
+echo -e "${YELLOW}Tip:${NC} npm run devroom:bootstrap after first start (free readiness scan)"
+
 echo ""
 echo -e "${GREEN}Starting dashboard:${NC}"
 echo "  DevRoom → http://localhost:3000"

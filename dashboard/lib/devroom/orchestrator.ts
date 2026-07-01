@@ -98,6 +98,12 @@ async function runAgentInternal(req: RunAgentRequest, founderApproved: boolean):
   }
 
   const job = await createJob({ codename: req.codename, task: req.task, projectId, risk });
+  await appendActivity({
+    agent: req.codename,
+    action: `Queued: ${req.task.slice(0, 100)}`,
+    type: "info",
+    projectId,
+  });
   kickWorker();
 
   return {

@@ -53,6 +53,7 @@ export async function generateReleasePackage(projectId: string): Promise<Release
   const recentJobs = await prisma.agentJob.count({
     where: { projectId, status: "COMPLETED", createdAt: { gte: new Date(Date.now() - 7 * 864e5) } },
   });
+  const pendingApprovals = await prisma.approval.count({ where: { status: "pending" } });
 
   const checks: ReleaseCheckItem[] = [
     {
@@ -77,8 +78,8 @@ export async function generateReleasePackage(projectId: string): Promise<Release
     },
     {
       label: "Pending approvals",
-      status: "pass",
-      detail: "Approval queue cleared",
+      status: pendingApprovals === 0 ? "pass" : pendingApprovals > 3 ? "fail" : "warn",
+      detail: pendingApprovals === 0 ? "Approval queue cleared" : `${pendingApprovals} pending approval(s)`,
     },
     {
       label: "Budget status",

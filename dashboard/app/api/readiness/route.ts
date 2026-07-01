@@ -7,6 +7,7 @@ import {
   scanAll,
 } from "../../../lib/devroom/readiness";
 import { audit } from "../../../lib/devroom/audit";
+import { appendActivity } from "../../../lib/devroom/store";
 
 export async function GET(req: Request) {
   const projectId = new URL(req.url).searchParams.get("projectId");
@@ -21,7 +22,9 @@ export async function POST(req: Request) {
   const action = String(body.action || "scan");
 
   if (action === "scanAll") {
-    return NextResponse.json({ portfolio: await scanAll() });
+    const portfolio = await scanAll();
+    await appendActivity({ agent: "FORGE", action: "Portfolio readiness scan (all apps)", type: "info" });
+    return NextResponse.json({ portfolio });
   }
 
   const projectId = String(body.projectId || "");
@@ -29,6 +32,7 @@ export async function POST(req: Request) {
 
   if (action === "scan") {
     const report = await runReadinessScan(projectId);
+    await appendActivity({ agent: "FORGE", action: `Readiness scan: ${projectId}`, type: "info", projectId });
     return NextResponse.json({ report });
   }
 

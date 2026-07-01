@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BRAND } from "../lib/brand";
-import { computePortfolioMetrics, initStorage } from "../lib/data";
-import { syncFromServer } from "../lib/server-sync";
 
 function timeGreeting(): { greet: string; period: "morning" | "afternoon" | "evening" | "night" } {
   const h = new Date().getHours();
@@ -19,31 +17,53 @@ export default function GreetingBanner() {
   const [sub, setSub] = useState("");
   const [pendingApprovals, setPendingApprovals] = useState(0);
   const [openBugs, setOpenBugs] = useState(0);
+  const [activeJobs, setActiveJobs] = useState(0);
+  const [hasBriefingToday, setHasBriefingToday] = useState(false);
 
   useEffect(() => {
     const { greet, period } = timeGreeting();
     setText(`${greet}, Shamikh.`);
 
     async function load() {
-      initStorage();
-      await syncFromServer();
-      const m = computePortfolioMetrics();
-      setOpenBugs(m.openBugs);
+      const today = new Date().toISOString().slice(0, 10);
 
       try {
-        const h = await fetch("/api/health").then((r) => r.json());
-        setPendingApprovals(h.pendingApprovals ?? m.pendingApprovals);
-      } catch {
-        setPendingApprovals(m.pendingApprovals);
-      }
+        const [h, jobs, briefings] = await Promise.all([
+          fetch("/api/health").then((r) => r.json()),
+          fetch("/api/jobs").then((r) => r.json()),
+          fetch("/api/briefings").then((r) => r.json()).catch(() => ({ briefings: [] })),
+        ]);
 
-      const subs: Record<string, string> = {
-        morning: "APEX has your briefing ready. Clear approvals before deep work.",
-        afternoon: "Midday pulse across the portfolio.",
-        evening: "Evening review window. Low-risk sandbox tasks can run unattended.",
-        night: "Night shift mode. Only critical items need your attention.",
-      };
-      setSub(subs[period]);
+        setPendingApprovals(h.pendingApprovals ?? 0);
+        setOpenBugs(h.openBugs ?? 0);
+
+        const processing = (jobs.jobs ?? []).filter(
+          (j: { status: string }) => j.status === "PROCESSING" || j.status === "PENDING"
+        ).length;
+        setActiveJobs(processing);
+
+        const briefs = briefings.briefings ?? briefings ?? [];
+        const todayBrief = Array.isArray(briefs)
+          ? briefs.some((b: { dateKey?: string }) => b.dateKey === today)
+          : false;
+        setHasBriefingToday(todayBrief);
+
+        if (processing > 0) {
+          setSub(`${processing} agent job${processing !== 1 ? "s" : ""} in the queue.`);
+        } else if (todayBrief) {
+          setSub("APEX briefing is ready — review on /briefing.");
+        } else if (period === "morning") {
+          setSub("No briefing yet today — generate one from /briefing.");
+        } else if (period === "afternoon") {
+          setSub("Midday pulse across the portfolio.");
+        } else if (period === "evening") {
+          setSub("Evening review window. Low-risk sandbox tasks can run unattended.");
+        } else {
+          setSub("Night shift mode. Only critical items need your attention.");
+        }
+      } catch {
+        setSub("Connect to the local dashboard to see live office status.");
+      }
     }
 
     void load();
@@ -54,15 +74,20 @@ export default function GreetingBanner() {
       <div className="font-heading mo-greeting-title">{text}</div>
       <div className="mo-greeting-sub">{sub}</div>
 
-      {(pendingApprovals > 0 || openBugs > 0) && (
+      {(pendingApprovals > 0 || openBugs > 0 || activeJobs > 0) && (
         <div className="mo-greeting-chips">
+          {activeJobs > 0 && (
+            <span className="mo-greeting-chip" style={{ borderColor: "var(--accent-green)" }}>
+              {activeJobs} running
+            </span>
+          )}
           {pendingApprovals > 0 && (
             <Link href="/approvals" className="mo-greeting-chip mo-greeting-chip-warn">
               {pendingApprovals} approval{pendingApprovals !== 1 ? "s" : ""} pending
             </Link>
           )}
           {openBugs > 0 && (
-            <Link href="/projects" className="mo-greeting-chip">
+            <Link href="/issues" className="mo-greeting-chip">
               {openBugs} open bug{openBugs !== 1 ? "s" : ""}
             </Link>
           )}
@@ -71,6 +96,7 @@ export default function GreetingBanner() {
 
       <div className="mo-greeting-meta">
         {BRAND.name} · local sandbox copies only · agents run on your Mac
+        {hasBriefingToday ? " · briefing today" : ""}
       </div>
     </div>
   );

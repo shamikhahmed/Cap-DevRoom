@@ -3,6 +3,7 @@ import { ensureDbReady, prisma } from "../../../lib/devroom/db";
 import { normalizeProjectId } from "../../../lib/devroom/portfolio";
 import { addApproval } from "../../../lib/devroom/store";
 import { notifyCritical } from "../../../lib/devroom/notify";
+import { createIssue } from "../../../lib/devroom/issues";
 
 /** Inbound handoff from Cap · Markroom (or other Cap offices). */
 export async function GET() {
@@ -34,6 +35,21 @@ export async function POST(req: Request) {
       data: { source, codename, task, projectId, risk, metadata, status: "pending" },
     });
 
+    const issue = await createIssue({
+      title: `[${source}] ${task.slice(0, 120)}`,
+      body: task,
+      projectId,
+      agent: codename,
+      type: "task",
+      priority: risk === "High" ? "high" : "medium",
+      status: "todo",
+    });
+
+    await prisma.handoff.update({
+      where: { id: handoff.id },
+      data: { issueId: issue.id, status: "in_progress" },
+    });
+
     const apr = await addApproval({
       title: `[${source}] ${codename}: ${task.slice(0, 72)}`,
       description: task,
@@ -51,7 +67,7 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, handoff, approvalId: apr.id }, { status: 201 });
+    return NextResponse.json({ ok: true, handoff, approvalId: apr.id, issueId: issue.id, issueKey: issue.key }, { status: 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Handoff failed";
     return NextResponse.json({ error: msg }, { status: 500 });

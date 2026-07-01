@@ -4,6 +4,7 @@ export const NAV_ITEMS = [
   { href: "/departments", label: "Departments", icon: "⬡", mobileMore: true },
   { href: "/security", label: "Security", icon: "⬟", badgeKey: "security" as const, mobileMore: true },
   { href: "/release", label: "Release", icon: "⬆", mobileMore: true },
+  { href: "/promote", label: "Promote", icon: "⇡", mobileMore: true },
   { href: "/briefing", label: "Briefing", icon: "☀", mobileMore: true },
   { href: "/projects", label: "Projects", icon: "▦", badgeKey: "bugs" as const, mobileMore: true },
   { href: "/issues", label: "Issues", icon: "◳", badgeKey: "issues" as const, mobileMore: true },

@@ -7,6 +7,10 @@ import { ensureDbReady, prisma } from "./db";
 import { getMemoryContext, recordAgentWork } from "./memory";
 import { acquireSandboxLock, releaseSandboxLock } from "./locks";
 import { assertWithinBudget, recordSpend, BudgetExceededError } from "./budget";
+import { buildAgentContextBlock } from "./context";
+import { createIssuesFromJobOutput } from "./issue-from-job";
+import { shouldRunTests, runSandboxTests } from "./test-runner";
+import { ensureHeartbeat } from "./heartbeat";
 
 /**
  * Durable job worker. Agent runs no longer execute inside the HTTP request —
@@ -45,8 +49,9 @@ async function buildAgentPrompt(codename: string, task: string, projectId: strin
   const def = getAgent(codename);
   if (!def) throw new Error(`Unknown agent: ${codename}`);
   const memory = await getMemoryContext(codename);
+  const portfolioCtx = await buildAgentContextBlock(projectId, codename);
   return `${def.systemPrompt}
-${memory ? `\nRECENT WORK MEMORY:\n${memory}\n` : ""}
+${portfolioCtx}${memory ? `\nRECENT WORK MEMORY:\n${memory}\n` : ""}
 ---
 SANDBOX ONLY: You are working in a COPY at ${cwd}
 Project: ${projectId}
@@ -58,6 +63,7 @@ ${task}
 RULES:
 - Minimal scope. Propose changes; implement only if task says "implement" or "fix".
 - List files you would change.
+- If you find bugs or debt worth tracking, add lines: ISSUE: short title
 - If checking deliverables (README, pitch, slides), report what already exists first.
 - End with a short executive summary for the CEO.`;
 }
@@ -81,13 +87,26 @@ export async function executeJob(jobId: string): Promise<void> {
   }
 
   await setJobStatus(job.id, "PROCESSING");
+  await appendActivity({
+    agent: job.codename,
+    action: `Processing: ${job.task.slice(0, 100)}`,
+    type: "info",
+    projectId: job.projectId,
+  });
 
   let cwd: string;
   try {
     cwd = resolveSandbox(job.projectId);
     assertNotProduction(cwd);
   } catch (e) {
-    await setJobStatus(job.id, "FAILED", { error: e instanceof Error ? e.message : "Sandbox error" });
+    const msg = e instanceof Error ? e.message : "Sandbox error";
+    await setJobStatus(job.id, "FAILED", { error: msg });
+    await appendActivity({
+      agent: job.codename,
+      action: `Failed (sandbox): ${msg.slice(0, 100)}`,
+      type: "critical",
+      projectId: job.projectId,
+    });
     return;
   }
 
@@ -108,6 +127,8 @@ export async function executeJob(jobId: string): Promise<void> {
     const { costUsd } = extractCost(result, tokensUsed);
     await recordSpend(tokensUsed, costUsd);
 
+    let testResultJson: string | undefined;
+
     await appendActivity({
       agent: job.codename,
       action: job.task.slice(0, 120),
@@ -115,13 +136,34 @@ export async function executeJob(jobId: string): Promise<void> {
       projectId: job.projectId,
     });
 
+    if (result.status === "finished" && shouldRunTests(job.codename)) {
+      const testResult = await runSandboxTests(cwd);
+      testResultJson = JSON.stringify(testResult);
+      await appendActivity({
+        agent: job.codename,
+        action: testResult.pass ? "Tests passed" : "Tests failed",
+        type: testResult.pass ? "success" : "warning",
+        projectId: job.projectId,
+      });
+    }
+
     await setJobStatus(job.id, result.status === "finished" ? "COMPLETED" : "FAILED", {
       output: output.slice(0, 12000),
       tokensUsed,
       costUsd,
+      testResult: testResultJson,
     });
 
     if (result.status === "finished") {
+      const keys = await createIssuesFromJobOutput(job.id, job.codename, job.projectId, output);
+      if (keys.length > 0) {
+        await appendActivity({
+          agent: job.codename,
+          action: `Filed ${keys.length} issue(s): ${keys.join(", ")}`,
+          type: "info",
+          projectId: job.projectId,
+        });
+      }
       await recordAgentWork(
         job.codename,
         job.task.slice(0, 80),
@@ -132,6 +174,12 @@ export async function executeJob(jobId: string): Promise<void> {
   } catch (err) {
     const msg = err instanceof CursorAgentError ? err.message : err instanceof Error ? err.message : String(err);
     await setJobStatus(job.id, "FAILED", { error: msg });
+    await appendActivity({
+      agent: job.codename,
+      action: `Failed: ${msg.slice(0, 100)}`,
+      type: "critical",
+      projectId: job.projectId,
+    });
   }
 }
 
@@ -185,6 +233,7 @@ export function ensureWorker(): void {
   if (g.__devroomWorker) return;
   g.__devroomWorker = true;
   setInterval(() => void tick(), 3000);
+  ensureHeartbeat();
 }
 
 /** Nudge the worker to drain immediately after enqueue. */

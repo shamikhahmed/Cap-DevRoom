@@ -54,8 +54,29 @@ function DepartmentsPageInner() {
 
   async function runDeptScan(dept: Department) {
     toast({ title: `Running ${dept} office scan…` });
-    const agents = AGENTS.filter((a) => a.department === dept);
-    toast({ kind: "success", title: `${dept} office`, detail: `${agents.length} agents standing by` });
+    try {
+      if (dept === "Engineering" || dept === "Product" || dept === "Release") {
+        await fetch("/api/readiness", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "scanAll" }),
+        });
+        toast({ kind: "success", title: `${dept} office`, detail: "Portfolio readiness scan complete" });
+      } else if (dept === "Security") {
+        await fetch("/api/security", { method: "POST" });
+        const d = await fetch("/api/security").then((r) => r.json());
+        setSecSummary(d);
+        toast({ kind: "success", title: "Security office", detail: `Avg score ${d.avgScore}%` });
+      } else if (dept === "Executive") {
+        await fetch("/api/briefings", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+        toast({ kind: "success", title: "Executive office", detail: "Briefing generated" });
+      } else {
+        const agents = AGENTS.filter((a) => a.department === dept);
+        toast({ kind: "success", title: `${dept} office`, detail: `${agents.length} agents ready` });
+      }
+    } catch {
+      toast({ kind: "error", title: "Scan failed", detail: "Check dashboard logs" });
+    }
   }
 
   const depts = selectedDept === "all" ? DEPARTMENTS : DEPARTMENTS.filter((d) => d.id === selectedDept);

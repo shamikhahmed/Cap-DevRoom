@@ -69,7 +69,7 @@ export async function createJob(input: {
 export async function setJobStatus(
   id: string,
   status: JobStatus,
-  extra?: { output?: string; error?: string; tokensUsed?: number; costUsd?: number }
+  extra?: { output?: string; error?: string; tokensUsed?: number; costUsd?: number; testResult?: string }
 ) {
   await ensureDbReady();
   const row = await prisma.agentJob.update({
@@ -78,6 +78,7 @@ export async function setJobStatus(
       status,
       output: extra?.output,
       error: extra?.error,
+      testResult: extra?.testResult,
       ...(extra?.tokensUsed != null ? { tokensUsed: extra.tokensUsed } : {}),
       ...(extra?.costUsd != null ? { costUsd: extra.costUsd } : {}),
     },

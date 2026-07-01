@@ -140,6 +140,14 @@ export async function updateApproval(
         : {}),
     },
   });
+
+  await appendActivity({
+    agent: row.agent,
+    action: `Approval ${status}: ${row.title.slice(0, 80)}`,
+    type: status === "approved" ? "success" : "warning",
+    projectId: row.projectId,
+  });
+
   return toServerApproval(row);
 }
 

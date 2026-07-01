@@ -35,6 +35,7 @@ model AgentJob {
   status     String   @default("PENDING")
   output     String?
   error      String?
+  testResult String?
   tokensUsed Int      @default(0)
   costUsd    Float    @default(0)
   createdAt  DateTime @default(now())
@@ -103,12 +104,25 @@ model Handoff {
   projectId String   @default("VaultCap")
   risk      String   @default("Medium")
   status    String   @default("pending")
+  issueId   String?
   metadata  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([codename])
+}
+
+model HealthCheck {
+  id        String   @id @default(cuid())
+  projectId String
+  status    String
+  latencyMs Int?
+  detail    String?
+  checkedAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([checkedAt])
 }
 
 /// Real portfolio projects — replaces hardcoded DEFAULT_PROJECTS.
@@ -176,18 +190,19 @@ model SandboxLock {
 
 /// Recurring agent runs (cron-style autonomous crews).
 model ScheduledRun {
-  id        String    @id @default(cuid())
-  name      String
-  codename  String
-  task      String
-  projectId String    @default("VaultCap")
-  cadence   String    @default("daily") // hourly|daily|weekly
-  mode      String    @default("local") // local|cloud
-  enabled   Boolean   @default(true)
-  lastRunAt DateTime?
-  nextRunAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String
+  codename      String
+  task          String
+  projectId     String    @default("VaultCap")
+  cadence       String    @default("daily") // hourly|daily|weekly
+  mode          String    @default("local") // local|cloud
+  portfolioLoop Boolean   @default(false)
+  enabled       Boolean   @default(true)
+  lastRunAt     DateTime?
+  nextRunAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([enabled])
 }

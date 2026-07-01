@@ -4,8 +4,13 @@ import { listSandboxes } from "../../../lib/devroom/sandboxes";
 import { sandboxSyncStatus } from "../../../lib/devroom/sandbox-sync";
 import { listServerApprovals } from "../../../lib/devroom/store";
 import { ensureDbReady, prisma } from "../../../lib/devroom/db";
+import { latestUptimeSummary } from "../../../lib/devroom/uptime";
+import { countUnpromotedFiles } from "../../../lib/devroom/promote";
+import { PORTFOLIO_APP_IDS } from "../../../lib/devroom/portfolio";
+import { ensureHeartbeat } from "../../../lib/devroom/heartbeat";
 
 export async function GET() {
+  ensureHeartbeat();
   const hasKey = Boolean(process.env.CURSOR_API_KEY?.trim());
   const sandboxes = listSandboxes();
   let database: "ok" | "unavailable" = "ok";
@@ -35,6 +40,25 @@ export async function GET() {
 
   const sync = sandboxSyncStatus();
 
+  let uptime: Record<string, unknown> = {};
+  let unpromotedTotal = 0;
+  if (database === "ok") {
+    try {
+      uptime = await latestUptimeSummary();
+      for (const id of PORTFOLIO_APP_IDS) {
+        unpromotedTotal += countUnpromotedFiles(id);
+      }
+    } catch {
+      /* optional */
+    }
+  }
+
+  let lastActivityAt: string | null = null;
+  if (database === "ok") {
+    const last = await prisma.activityLog.findFirst({ orderBy: { createdAt: "desc" } });
+    lastActivityAt = last?.createdAt.toISOString() ?? null;
+  }
+
   return NextResponse.json({
     ok: database === "ok",
     cursorApi: hasKey ? "configured" : "missing",
@@ -46,5 +70,9 @@ export async function GET() {
     activeProjects,
     totalProjects,
     version: APP_VERSION,
+    uptime,
+    unpromotedTotal,
+    lastActivityAt,
+    heartbeat: process.env.DEVROOM_HEARTBEAT === "1",
   });
 }
